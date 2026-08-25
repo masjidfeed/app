@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FR-WG-06: Isha/night widget background with high contrast for white text. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <gradient
+        android:angle="270"
+        android:startColor="#E605101E"
+        android:centerColor="#E60B1C38"
+        android:endColor="#E6162A48" />
+</shape>

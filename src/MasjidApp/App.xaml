@@ -1,0 +1,24 @@
+﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MasjidApp"
+             xmlns:conv="clr-namespace:MasjidApp.Converters"
+             x:Class="MasjidApp.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global value converters (Batch 02) -->
+            <conv:IsNotNullConverter x:Key="IsNotNullConverter" />
+            <conv:IsNotNullOrEmptyConverter x:Key="IsNotNullOrEmptyConverter" />
+            <conv:InvertBoolConverter x:Key="InvertBoolConverter" />
+            <conv:SanitizedHtmlConverter x:Key="SanitizedHtmlConverter" />
+            <conv:HtmlToPlainTextConverter x:Key="HtmlToPlainTextConverter" />
+            <conv:DayOfMonthConverter x:Key="DayOfMonthConverter" />
+            <conv:PrayerSkyGradientConverter x:Key="PrayerSkyGradientConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

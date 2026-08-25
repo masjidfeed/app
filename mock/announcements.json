@@ -1,0 +1,20 @@
+[
+  {
+    "postId": 1001,
+    "title": "Eid al-Adha Prayer Times Announced",
+    "description": "<p>Eid prayer will be held at <strong>7:30 AM</strong> and <strong>9:00 AM</strong>. Please arrive early and carpool where possible.</p>",
+    "details": "https://bothellmosque.org/wp-json/masjid/v1/posts/1001/description",
+    "publishedAt": "2026-06-05T09:00:00-07:00",
+    "image": "/images/eid.png",
+    "url": "https://bothellmosque.org/eid-announcement"
+  },
+  {
+    "postId": 1002,
+    "title": "Parking Lot Maintenance This Weekend",
+    "description": "<p>The north parking lot will be closed for resurfacing on Saturday. Please use street parking.</p>",
+    "details": "https://bothellmosque.org/wp-json/masjid/v1/posts/1002/description",
+    "publishedAt": "2026-06-08T12:00:00-07:00",
+    "image": null,
+    "url": "https://bothellmosque.org/parking-maintenance"
+  }
+]

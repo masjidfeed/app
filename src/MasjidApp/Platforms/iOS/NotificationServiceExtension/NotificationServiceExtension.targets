@@ -1,0 +1,61 @@
+<!-- Builds and embeds the native iOS notification service extension used for rich push images. -->
+<Project>
+
+  <PropertyGroup>
+    <_NotificationServiceDir>$(MSBuildThisFileDirectory)</_NotificationServiceDir>
+    <_NotificationServiceProject>$(_NotificationServiceDir)MasjidNotificationServiceExtension.xcodeproj</_NotificationServiceProject>
+    <_NotificationServiceTarget>MasjidNotificationServiceExtension</_NotificationServiceTarget>
+    <_NotificationServiceAppexName>MasjidNotificationServiceExtension.appex</_NotificationServiceAppexName>
+    <EmbedNotificationServiceExtension Condition="'$(EmbedNotificationServiceExtension)' == ''">true</EmbedNotificationServiceExtension>
+  </PropertyGroup>
+
+  <Target Name="_BuildAndEmbedMasjidNotificationServiceExtension"
+          BeforeTargets="_CodesignAppBundle"
+          DependsOnTargets="_GenerateBundleName"
+          Condition="'$(EmbedNotificationServiceExtension)' == 'true' And '$(IsMacEnabled)' == 'true' And '$(_CanOutputAppBundle)' == 'true'">
+    <PropertyGroup>
+      <_NotificationServiceSdk Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">iphonesimulator</_NotificationServiceSdk>
+      <_NotificationServiceSdk Condition="'$(_NotificationServiceSdk)' == ''">iphoneos</_NotificationServiceSdk>
+      <_NotificationServiceDestination Condition="'$(_NotificationServiceSdk)' == 'iphonesimulator'">generic/platform=iOS Simulator</_NotificationServiceDestination>
+      <_NotificationServiceDestination Condition="'$(_NotificationServiceDestination)' == ''">generic/platform=iOS</_NotificationServiceDestination>
+      <_NotificationServiceConfiguration Condition="'$(Configuration)' == 'Release'">Release</_NotificationServiceConfiguration>
+      <_NotificationServiceConfiguration Condition="'$(_NotificationServiceConfiguration)' == ''">Debug</_NotificationServiceConfiguration>
+      <_NotificationServiceDerivedData>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)notification-service-extension</_NotificationServiceDerivedData>
+      <_NotificationServiceProductsDir>$(_NotificationServiceDerivedData)/Build/Products/$(_NotificationServiceConfiguration)-$(_NotificationServiceSdk)</_NotificationServiceProductsDir>
+      <_NotificationServicePlugInsDir>$([MSBuild]::EnsureTrailingSlash('$(AppBundleDir)'))PlugIns/</_NotificationServicePlugInsDir>
+      <_NotificationServiceCodeSigningArgs>CODE_SIGNING_ALLOWED=NO ENABLE_DEBUG_DYLIB=NO</_NotificationServiceCodeSigningArgs>
+    </PropertyGroup>
+
+    <Message Importance="high"
+             Text="Building notification service extension '$(_NotificationServiceTarget)' ($(_NotificationServiceConfiguration)/$(_NotificationServiceSdk))..." />
+
+    <Exec Command="xcodebuild -project &quot;$(_NotificationServiceProject)&quot; -scheme $(_NotificationServiceTarget) -configuration $(_NotificationServiceConfiguration) -sdk $(_NotificationServiceSdk) -destination &quot;$(_NotificationServiceDestination)&quot; -derivedDataPath &quot;$(_NotificationServiceDerivedData)&quot; $(_NotificationServiceCodeSigningArgs) build"
+          WorkingDirectory="$(_NotificationServiceDir)" />
+
+    <ItemGroup>
+      <_NotificationServiceAppexFiles Include="$(_NotificationServiceProductsDir)/$(_NotificationServiceAppexName)/**/*" />
+    </ItemGroup>
+
+    <Error Condition="'@(_NotificationServiceAppexFiles)' == ''"
+           Text="Notification service build produced no .appex at '$(_NotificationServiceProductsDir)/$(_NotificationServiceAppexName)'." />
+
+    <Copy SourceFiles="@(_NotificationServiceAppexFiles)"
+          DestinationFiles="@(_NotificationServiceAppexFiles->'$(_NotificationServicePlugInsDir)$(_NotificationServiceAppexName)/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+
+    <PropertyGroup>
+      <_NotificationServiceSigningKey Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">-</_NotificationServiceSigningKey>
+      <_NotificationServiceSigningKey Condition="'$(_NotificationServiceSigningKey)' == ''">$(_CodeSigningKey)</_NotificationServiceSigningKey>
+    </PropertyGroup>
+
+    <Exec Condition="'$(_NotificationServiceSigningKey)' != '' And '$(IsMacEnabled)' == 'true'"
+          Command="/usr/bin/codesign --force --timestamp=none --sign &quot;$(_NotificationServiceSigningKey)&quot; &quot;$([MSBuild]::EnsureTrailingSlash('$(_NotificationServicePlugInsDir)'))$(_NotificationServiceAppexName)&quot;" />
+
+    <Error Condition="'$(_NotificationServiceSigningKey)' == '' And '$(IsMacEnabled)' == 'true'"
+           Text="No signing identity resolved for $(_NotificationServiceAppexName) (RuntimeIdentifier=$(RuntimeIdentifier))." />
+
+    <Message Importance="high"
+             Text="Embedded and signed $(_NotificationServiceAppexName) (key: $(_NotificationServiceSigningKey))." />
+  </Target>
+
+</Project>

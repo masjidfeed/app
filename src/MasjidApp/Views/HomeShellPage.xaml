@@ -1,0 +1,1007 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.HomeShellPage"
+    x:Name="HomePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:MasjidApp.Views"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:controls="clr-namespace:MasjidApp.Controls"
+    xmlns:models="clr-namespace:MasjidApp.Core.Models;assembly=MasjidApp.Core"
+    xmlns:events="clr-namespace:MasjidApp.Core.Events;assembly=MasjidApp.Core"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    x:DataType="vm:HomeShellViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}"
+    Title="{Binding Title}">
+
+    <!-- TC-03: portrait phone layout; FR-ST-03: AppThemeBinding for light/dark -->
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="CategoryLabelStyle" TargetType="Label" BasedOn="{StaticResource TextBody}">
+                <Setter Property="Padding" Value="16,10" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                <Setter Property="HorizontalTextAlignment" Value="Center" />
+            </Style>
+
+            <DataTemplate x:Key="AnnouncementsTabTemplate" x:DataType="vm:HomeShellCategoryPage">
+                <Grid>
+                    <!-- RefreshView must directly wrap the vertically scrolling list;
+                         wrapping the CarouselView instead swallows the pull gesture. -->
+                    <RefreshView
+                        Command="{Binding Shell.RefreshCommand}"
+                        IsRefreshing="{Binding Shell.IsRefreshing}">
+                    <CollectionView
+                        ItemsSource="{Binding Shell.RecentAnnouncements}"
+                        BackgroundColor="Transparent"
+                        SemanticProperties.Description="Recent announcements">
+                        <CollectionView.Header>
+                            <VerticalStackLayout>
+
+                                <Border
+                                    Margin="12,12,12,6"
+                                    Padding="16"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 12"
+                                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                                    IsVisible="{Binding Shell.TodaySchedule, Converter={StaticResource IsNotNullConverter}}"
+                                    SemanticProperties.Description="Upcoming prayer event and today's prayer times"
+                                    SemanticProperties.Hint="Open the full prayer schedule">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Shell.GoToPrayerTimesCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <VerticalStackLayout Spacing="10">
+                                        <Border
+                                            Padding="12,9"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 8"
+                                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                            SemanticProperties.Description="{Binding Shell.UpcomingPrayerEventText}">
+                                            <HorizontalStackLayout
+                                                Spacing="8"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center">
+                                                <Image
+                                                    Source="clock_4.png"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    AutomationProperties.IsInAccessibleTree="False" />
+                                                <Label
+                                                    Text="{Binding Shell.UpcomingPrayerEventText}"
+                                                    Style="{StaticResource TextBodyStrong}"
+                                                    TextColor="White"
+                                                    VerticalOptions="Center"
+                                                    LineBreakMode="TailTruncation" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+
+                                        <BoxView
+                                            HeightRequest="1"
+                                            Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                                        <FlexLayout
+                                            Direction="Row"
+                                            AlignItems="Stretch"
+                                            JustifyContent="SpaceBetween"
+                                            BindableLayout.ItemsSource="{Binding Shell.HomePrayerRows}"
+                                            AutomationId="HomePrayerRowsLayout">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:HomePrayerTimeRow">
+                                                    <VerticalStackLayout
+                                                        FlexLayout.Basis="16.666%"
+                                                        Spacing="1"
+                                                        HorizontalOptions="Fill">
+                                                        <Label
+                                                            Text="{Binding Name}"
+                                                            Style="{StaticResource TextSmall}"
+                                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                                            HorizontalTextAlignment="Center"
+                                                            LineBreakMode="NoWrap"
+                                                            SemanticProperties.Description="{Binding Name}" />
+                                                        <Label
+                                                            Text="{Binding PrimaryTimeText}"
+                                                            Style="{StaticResource TextBodyStrong}"
+                                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                                            HorizontalTextAlignment="Center"
+                                                            LineBreakMode="NoWrap" />
+                                                        <Label
+                                                            Text="{Binding SecondaryTimeText}"
+                                                            Style="{StaticResource TextCaption}"
+                                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                            HorizontalTextAlignment="Center"
+                                                            LineBreakMode="NoWrap" />
+                                                    </VerticalStackLayout>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+
+                    <Grid
+                        Margin="12,16,12,8">
+                        <Label
+                            Grid.Column="0"
+                            Text="Latest Announcements"
+                            Style="{StaticResource TextSubheadStrong}"
+                            SemanticProperties.HeadingLevel="Level2" />
+                    </Grid>
+
+                            </VerticalStackLayout>
+                        </CollectionView.Header>
+                        <CollectionView.EmptyView>
+                            <Label
+                                Margin="12,8"
+                                Text="No recent announcements."
+                                Style="{StaticResource TextBody}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:MasjidPost">
+                                <Border
+                                    Margin="12,4"
+                                    Padding="0"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 8"
+                                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            x:DataType="{x:Null}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectPostCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <VerticalStackLayout Padding="16,14" Spacing="4">
+                                        <Label
+                                            Text="{Binding Title}"
+                                            FontFamily="GildaDisplay"
+                                            Style="{StaticResource TextCardTitle}"
+                                            SemanticProperties.HeadingLevel="Level3"
+                                            SemanticProperties.Description="{Binding Title}" />
+                                        <Label
+                                            Text="{Binding PublishedAt, StringFormat='{0:MMM d, yyyy}'}"
+                                            Style="{StaticResource TextCaption}"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                            SemanticProperties.Description="{Binding PublishedAt, StringFormat='Published {0:MMMM d, yyyy}'}" />
+                                        <Image
+                                            Source="{Binding ImageUrl}"
+                                            Aspect="AspectFill"
+                                            HeightRequest="200"
+                                            Margin="0,0,0,4"
+                                            IsVisible="{Binding ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                            SemanticProperties.Description="{Binding Title, StringFormat='{0} image'}" />
+                                        <Label
+                                            Text="{Binding Description, Converter={StaticResource HtmlToPlainTextConverter}}"
+                                            Style="{StaticResource TextCaption}"
+                                            LineBreakMode="TailTruncation"
+                                            MaxLines="2"
+                                            IsVisible="{Binding Description, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                                            SemanticProperties.Description="{Binding Title}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.Footer>
+                            <BoxView HeightRequest="96" Color="Transparent" />
+                        </CollectionView.Footer>
+                    </CollectionView>
+                    </RefreshView>
+
+                    <ActivityIndicator
+                        Margin="0,16"
+                        IsRunning="{Binding Shell.IsBusy}"
+                        IsVisible="{Binding Shell.IsBusy}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="EventsTabTemplate" x:DataType="vm:HomeShellCategoryPage">
+                <Grid
+                    RowDefinitions="*,Auto">
+                    <!-- RefreshView must directly wrap the vertically scrolling list;
+                         wrapping the CarouselView instead swallows the pull gesture. -->
+                    <RefreshView
+                        Grid.Row="0"
+                        Command="{Binding Shell.RefreshCommand}"
+                        IsRefreshing="{Binding Shell.IsRefreshing}">
+                    <CollectionView
+                        ItemsSource="{Binding Shell.UpcomingEvents}"
+                        BackgroundColor="Transparent"
+                        SemanticProperties.Description="Upcoming events">
+                        <CollectionView.Header>
+                            <BoxView HeightRequest="8" Color="Transparent" />
+                        </CollectionView.Header>
+                        <CollectionView.EmptyView>
+                            <Label
+                                Margin="12,8"
+                                Text="No upcoming events."
+                                Style="{StaticResource TextBody}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="events:MasjidEventOccurrence">
+                                <Border
+                                    Margin="12,4"
+                                    Padding="14,12"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 8"
+                                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            x:DataType="{x:Null}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectOccurrenceCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="64,*" ColumnSpacing="12">
+                                        <Border
+                                            Grid.Column="0"
+                                            WidthRequest="60"
+                                            HeightRequest="60"
+                                            StrokeShape="RoundRectangle 12"
+                                            StrokeThickness="0"
+                                            VerticalOptions="Start"
+                                            SemanticProperties.Description="{Binding OccurrenceDateTime, StringFormat='{0:MMMM d}'}">
+                                            <Grid RowDefinitions="22,*">
+                                                <Grid
+                                                    Grid.Row="0"
+                                                    BackgroundColor="{DynamicResource ActivePrimaryColor}">
+                                                    <Label
+                                                        Text="{Binding OccurrenceDateTime, StringFormat='{0:MMM}'}"
+                                                        Style="{StaticResource TextMicroStrong}"
+                                                        HorizontalOptions="Center"
+                                                        VerticalOptions="Center"
+                                                        TextColor="White" />
+                                                </Grid>
+                                                <Grid
+                                                    Grid.Row="1"
+                                                    BackgroundColor="{DynamicResource ActivePrimarySoftColor}">
+                                                    <Label
+                                                        Text="{Binding OccurrenceDateTime, Converter={StaticResource DayOfMonthConverter}}"
+                                                        Style="{StaticResource TextHeadline}"
+                                                        HorizontalOptions="Center"
+                                                        VerticalOptions="Center"
+                                                        TextColor="{DynamicResource ActivePrimaryColor}" />
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+
+                                        <VerticalStackLayout
+                                            Grid.Column="1"
+                                            Spacing="6">
+                                            <Image
+                                                Source="{Binding Event.ImageUrl}"
+                                                Aspect="AspectFill"
+                                                HeightRequest="200"
+                                                IsVisible="{Binding Event.ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                                SemanticProperties.Description="{Binding Event.Title, StringFormat='{0} image'}" />
+                                            <Label
+                                                Text="{Binding Event.Title}"
+                                                FontFamily="GildaDisplay"
+                                                Style="{StaticResource TextCardTitle}"
+                                                LineBreakMode="WordWrap"
+                                                MaxLines="2"
+                                                SemanticProperties.HeadingLevel="Level3"
+                                                SemanticProperties.Description="{Binding Event.Title}" />
+                                            <Border
+                                                Padding="10,8"
+                                                Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 6"
+                                                Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}"
+                                                IsVisible="{Binding HasActiveAlert}">
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label
+                                                        Text="{l:Localize Events_Alert_Label}"
+                                                        Style="{StaticResource TextMicroStrong}"
+                                                        TextTransform="Uppercase"
+                                                        TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+                                                    <Label
+                                                        Text="{Binding ActiveAlert}"
+                                                        Style="{StaticResource TextCaption}"
+                                                        LineBreakMode="WordWrap"
+                                                        TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+                                                </VerticalStackLayout>
+                                            </Border>
+                                            <HorizontalStackLayout Spacing="6">
+                                                <Label
+                                                    Text="🕒"
+                                                    WidthRequest="20"
+                                                    Style="{StaticResource GlyphInline}"
+                                                    VerticalOptions="Center"
+                                                    AutomationProperties.IsInAccessibleTree="False" />
+                                                <Label
+                                                    Text="{Binding OccurrenceDateTime, StringFormat='{0:h:mm tt}'}"
+                                                    Style="{StaticResource TextCaption}"
+                                                    VerticalOptions="Center"
+                                                    TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                    SemanticProperties.Description="{Binding OccurrenceDateTime, StringFormat='At {0:h:mm tt}'}" />
+                                            </HorizontalStackLayout>
+                                            <HorizontalStackLayout
+                                                Spacing="6"
+                                                IsVisible="{Binding Event.Location, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                                                <Label
+                                                    Text="📍"
+                                                    WidthRequest="20"
+                                                    Style="{StaticResource GlyphInline}"
+                                                    VerticalOptions="Center"
+                                                    AutomationProperties.IsInAccessibleTree="False" />
+                                                <Label
+                                                    Text="{Binding Event.Location}"
+                                                    Style="{StaticResource TextCaption}"
+                                                    LineBreakMode="WordWrap"
+                                                    MaxLines="2"
+                                                    VerticalOptions="Center"
+                                                    TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                    SemanticProperties.Description="{Binding Event.Location, StringFormat='Location: {0}'}" />
+                                            </HorizontalStackLayout>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.Footer>
+                            <BoxView HeightRequest="96" Color="Transparent" />
+                        </CollectionView.Footer>
+                    </CollectionView>
+                    </RefreshView>
+
+                    <ActivityIndicator
+                        Grid.Row="1"
+                        Margin="0,16"
+                        IsRunning="{Binding Shell.IsBusy}"
+                        IsVisible="{Binding Shell.IsBusy}"
+                        HorizontalOptions="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AboutTabTemplate" x:DataType="vm:HomeShellCategoryPage">
+                <!-- The grouped-list background comes from the page so it also fills
+                     the area behind the floating tab bar. -->
+                <ScrollView>
+                    <VerticalStackLayout
+                        Spacing="0"
+                        Padding="0,0,0,96"
+                        SemanticProperties.Description="About the masjid">
+
+                        <ActivityIndicator
+                            Margin="0,16"
+                            IsRunning="{Binding Shell.About.IsBusy}"
+                            IsVisible="{Binding Shell.About.IsBusy}"
+                            HorizontalOptions="Center" />
+
+                        <Border
+                            Margin="16,16,16,0"
+                            Padding="10"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 12"
+                            Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                            IsVisible="{Binding Shell.About.Address, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                            HorizontalOptions="Fill">
+                            <controls:LocationMapPreview
+                                Address="{Binding Shell.About.Address}"
+                                LocationName="{Binding Shell.About.MasjidName}"
+                                Latitude="{Binding Shell.About.MapLatitude}"
+                                Longitude="{Binding Shell.About.MapLongitude}"
+                                HasLocation="{Binding Shell.About.HasMapLocation}"
+                                OpenMapCommand="{Binding Shell.About.OpenMapCommand}"
+                                HorizontalOptions="Fill" />
+                        </Border>
+
+                        <VerticalStackLayout Margin="0,16,0,0" Spacing="8">
+                            <Label
+                                Text="Contact"
+                                Style="{StaticResource TextCaptionStrong}"
+                                Margin="16,0"
+                                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                SemanticProperties.HeadingLevel="Level3" />
+
+                            <Border
+                                Margin="16,0"
+                                Padding="0"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                                <VerticalStackLayout Spacing="0">
+
+                                    <!-- Phone -->
+                                    <Grid
+                                        ColumnDefinitions="*,Auto"
+                                        Padding="12,10"
+                                        IsVisible="{Binding Shell.About.Phone, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                                        <Grid
+                                            Grid.Column="0"
+                                            ColumnDefinitions="40,*"
+                                            ColumnSpacing="12"
+                                            MinimumHeightRequest="44"
+                                            SemanticProperties.Description="{Binding Shell.About.Phone, StringFormat='Call {0}'}">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Shell.About.CallPhoneCommand}" />
+                                            </Grid.GestureRecognizers>
+                                            <Border
+                                                Grid.Column="0"
+                                                WidthRequest="40"
+                                                HeightRequest="40"
+                                                Padding="0"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 10"
+                                                BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                                VerticalOptions="Center">
+                                                <Image
+                                                    Source="about_phone.png"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Border>
+                                            <Label
+                                                Grid.Column="1"
+                                                Text="{Binding Shell.About.Phone}"
+                                                Style="{StaticResource TextBody}"
+                                                VerticalOptions="Center"
+                                                SemanticProperties.Description="{Binding Shell.About.Phone}" />
+                                        </Grid>
+                                        <Border
+                                            Grid.Column="1"
+                                            WidthRequest="44"
+                                            HeightRequest="44"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            BackgroundColor="Transparent"
+                                            VerticalOptions="Center"
+                                            SemanticProperties.Description="Copy phone number">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Shell.About.CopyCommand}"
+                                                    CommandParameter="phone" />
+                                            </Border.GestureRecognizers>
+                                            <Grid>
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy.png, Dark=about_copy_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsPhoneCopied, Converter={StaticResource InvertBoolConverter}}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy_check.png, Dark=about_copy_check_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsPhoneCopied}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                    <BoxView
+                                        HeightRequest="1"
+                                        Margin="64,0,0,0"
+                                        Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        IsVisible="{Binding Shell.About.Phone, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+                                    <!-- Email -->
+                                    <Grid
+                                        ColumnDefinitions="*,Auto"
+                                        Padding="12,10"
+                                        IsVisible="{Binding Shell.About.Email, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                                        <Grid
+                                            Grid.Column="0"
+                                            ColumnDefinitions="40,*"
+                                            ColumnSpacing="12"
+                                            MinimumHeightRequest="44"
+                                            SemanticProperties.Description="{Binding Shell.About.Email, StringFormat='Email {0}'}">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Shell.About.SendEmailCommand}" />
+                                            </Grid.GestureRecognizers>
+                                            <Border
+                                                Grid.Column="0"
+                                                WidthRequest="40"
+                                                HeightRequest="40"
+                                                Padding="0"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 10"
+                                                BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                                VerticalOptions="Center">
+                                                <Image
+                                                    Source="about_mail.png"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Border>
+                                            <Label
+                                                Grid.Column="1"
+                                                Text="{Binding Shell.About.Email}"
+                                                Style="{StaticResource TextBody}"
+                                                VerticalOptions="Center"
+                                                LineBreakMode="TailTruncation"
+                                                SemanticProperties.Description="{Binding Shell.About.Email}" />
+                                        </Grid>
+                                        <Border
+                                            Grid.Column="1"
+                                            WidthRequest="44"
+                                            HeightRequest="44"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            BackgroundColor="Transparent"
+                                            VerticalOptions="Center"
+                                            SemanticProperties.Description="Copy email address">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Shell.About.CopyCommand}"
+                                                    CommandParameter="email" />
+                                            </Border.GestureRecognizers>
+                                            <Grid>
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy.png, Dark=about_copy_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsEmailCopied, Converter={StaticResource InvertBoolConverter}}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy_check.png, Dark=about_copy_check_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsEmailCopied}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                    <BoxView
+                                        HeightRequest="1"
+                                        Margin="64,0,0,0"
+                                        Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        IsVisible="{Binding Shell.About.Email, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+                                    <!-- Website -->
+                                    <Grid
+                                        ColumnDefinitions="*,Auto"
+                                        Padding="12,10"
+                                        IsVisible="{Binding Shell.About.Website, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                                        <Grid
+                                            Grid.Column="0"
+                                            ColumnDefinitions="40,*"
+                                            ColumnSpacing="12"
+                                            MinimumHeightRequest="44"
+                                            SemanticProperties.Description="Open website">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Shell.About.OpenWebsiteCommand}" />
+                                            </Grid.GestureRecognizers>
+                                            <Border
+                                                Grid.Column="0"
+                                                WidthRequest="40"
+                                                HeightRequest="40"
+                                                Padding="0"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 10"
+                                                BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                                VerticalOptions="Center">
+                                                <Image
+                                                    Source="about_web.png"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Border>
+                                            <Label
+                                                Grid.Column="1"
+                                                Text="{Binding Shell.About.Website}"
+                                                Style="{StaticResource TextBody}"
+                                                VerticalOptions="Center"
+                                                LineBreakMode="TailTruncation"
+                                                SemanticProperties.Description="{Binding Shell.About.Website}" />
+                                        </Grid>
+                                        <Border
+                                            Grid.Column="1"
+                                            WidthRequest="44"
+                                            HeightRequest="44"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            BackgroundColor="Transparent"
+                                            VerticalOptions="Center"
+                                            SemanticProperties.Description="Copy website address">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Shell.About.CopyCommand}"
+                                                    CommandParameter="website" />
+                                            </Border.GestureRecognizers>
+                                            <Grid>
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy.png, Dark=about_copy_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsWebsiteCopied, Converter={StaticResource InvertBoolConverter}}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                                <Image
+                                                    Source="{AppThemeBinding Light=about_copy_check.png, Dark=about_copy_check_white.png}"
+                                                    IsVisible="{Binding Shell.About.IsWebsiteCopied}"
+                                                    WidthRequest="20"
+                                                    HeightRequest="20"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout
+                            Margin="0,16,0,0"
+                            Spacing="8"
+                            IsVisible="{Binding Shell.About.HasSocialLinks}">
+                            <Label
+                                Text="Follow Us"
+                                Style="{StaticResource TextCaptionStrong}"
+                                Margin="16,0"
+                                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                SemanticProperties.HeadingLevel="Level3" />
+
+                            <Border
+                                Margin="16,0"
+                                Padding="0"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                                <VerticalStackLayout Spacing="0">
+
+                                    <!-- Facebook -->
+                                    <Grid
+                                        ColumnDefinitions="40,*"
+                                        ColumnSpacing="12"
+                                        Padding="12,10"
+                                        MinimumHeightRequest="64"
+                                        IsVisible="{Binding Shell.About.Facebook, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                        SemanticProperties.Description="Open Facebook page">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Shell.About.OpenFacebookCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <Border
+                                            Grid.Column="0"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 10"
+                                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                            VerticalOptions="Center">
+                                            <Image
+                                                Source="about_facebook.png"
+                                                WidthRequest="22"
+                                                HeightRequest="22"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center" />
+                                        </Border>
+                                        <Label
+                                            Grid.Column="1"
+                                            Text="Facebook"
+                                            Style="{StaticResource TextBody}"
+                                            VerticalOptions="Center" />
+                                    </Grid>
+                                    <BoxView
+                                        HeightRequest="1"
+                                        Margin="64,0,0,0"
+                                        Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        IsVisible="{Binding Shell.About.Facebook, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+                                    <!-- Instagram -->
+                                    <Grid
+                                        ColumnDefinitions="40,*"
+                                        ColumnSpacing="12"
+                                        Padding="12,10"
+                                        MinimumHeightRequest="64"
+                                        IsVisible="{Binding Shell.About.Instagram, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                        SemanticProperties.Description="Open Instagram profile">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Shell.About.OpenInstagramCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <Border
+                                            Grid.Column="0"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 10"
+                                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                            VerticalOptions="Center">
+                                            <Image
+                                                Source="about_instagram.png"
+                                                WidthRequest="22"
+                                                HeightRequest="22"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center" />
+                                        </Border>
+                                        <Label
+                                            Grid.Column="1"
+                                            Text="Instagram"
+                                            Style="{StaticResource TextBody}"
+                                            VerticalOptions="Center" />
+                                    </Grid>
+                                    <BoxView
+                                        HeightRequest="1"
+                                        Margin="64,0,0,0"
+                                        Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        IsVisible="{Binding Shell.About.Instagram, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+                                    <!-- WhatsApp -->
+                                    <Grid
+                                        ColumnDefinitions="40,*"
+                                        ColumnSpacing="12"
+                                        Padding="12,10"
+                                        MinimumHeightRequest="64"
+                                        IsVisible="{Binding Shell.About.WhatsApp, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                        SemanticProperties.Description="Open WhatsApp">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Shell.About.OpenWhatsAppCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <Border
+                                            Grid.Column="0"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 10"
+                                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                            VerticalOptions="Center">
+                                            <Image
+                                                Source="about_whatsapp.png"
+                                                WidthRequest="22"
+                                                HeightRequest="22"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center" />
+                                        </Border>
+                                        <Label
+                                            Grid.Column="1"
+                                            Text="WhatsApp"
+                                            Style="{StaticResource TextBody}"
+                                            VerticalOptions="Center" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </DataTemplate>
+
+            <views:HomeShellTabTemplateSelector
+                x:Key="HomeShellTabTemplateSelector"
+                AnnouncementsTemplate="{StaticResource AnnouncementsTabTemplate}"
+                EventsTemplate="{StaticResource EventsTabTemplate}"
+                AboutTemplate="{StaticResource AboutTabTemplate}" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <!-- iOS design language: Layout defaults SafeAreaEdges to Container, which makes
+         the root Grid shrink its own frame by the bottom safe area and hard-clip the
+         lists just above the floating tab bar. Opting the bottom edge out (None) lets
+         content run edge-to-edge and scroll under the tab bar, matching Prayer Times /
+         Settings - those get it for free because their root is a ScrollView, which
+         insets its content instead of shrinking its frame. Top/left/right stay
+         Container so the header still clears the status bar and notch, and each tab
+         adds bottom padding so the last item can be scrolled clear of the tab bar. -->
+    <Grid
+        RowDefinitions="Auto,Auto,Auto,*"
+        SafeAreaEdges="Container,Container,Container,None">
+
+        <!-- ── Offline badge (NFR-OF-02) ──────────────────────────────────── -->
+        <Grid
+            Grid.Row="0"
+            Padding="12,4"
+            BackgroundColor="{DynamicResource ActivePrimarySoftColor}"
+            IsVisible="{Binding ContentState.IsOffline}"
+            SemanticProperties.Description="Showing cached data - offline">
+            <Label
+                Text="Showing cached data - offline"
+                Style="{StaticResource TextCaption}"
+                HorizontalOptions="Center"
+                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+        </Grid>
+
+        <!-- ── Branding header: masjid name + logo (left) · settings (right) ── -->
+        <!-- Transparent so the header shares the page canvas instead of sitting on a white band. -->
+        <Grid
+            Grid.Row="1"
+            Padding="12,8,8,8"
+            ColumnDefinitions="*,Auto,Auto"
+            BackgroundColor="Transparent"
+            SemanticProperties.Description="{Binding MasjidName, StringFormat='Masjid: {0}'}">
+
+            <!-- Name + logo side-by-side, left-aligned -->
+            <HorizontalStackLayout
+                Grid.Column="0"
+                Spacing="8"
+                VerticalOptions="Center">
+                <Image
+                    Source="{Binding LogoUrl}"
+                    HeightRequest="32"
+                    WidthRequest="40"
+                    Aspect="AspectFit"
+                    VerticalOptions="Center"
+                    IsVisible="{Binding LogoUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.Description="{Binding MasjidName, StringFormat='{0} logo'}" />
+                <Label
+                    Text="{Binding MasjidName}"
+                    Style="{StaticResource TextSubtitle}"
+                    VerticalOptions="Center"
+                    SemanticProperties.HeadingLevel="Level1"
+                    SemanticProperties.Description="{Binding MasjidName}" />                
+            </HorizontalStackLayout>
+
+            <!-- Notification inbox button with unread indicator. -->
+            <Border
+                Grid.Column="1"
+                WidthRequest="44"
+                HeightRequest="44"
+                BackgroundColor="Transparent"
+                StrokeThickness="0"
+                VerticalOptions="Center"
+                SemanticProperties.Description="Open notifications">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToNotificationsCommand}" />
+                </Border.GestureRecognizers>
+                <Grid>
+                    <Image
+                        Source="{AppThemeBinding Light=bell.png, Dark=bell_white.png}"
+                        WidthRequest="24"
+                        HeightRequest="24"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                    <Border
+                        WidthRequest="9"
+                        HeightRequest="9"
+                        Padding="0"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 4.5"
+                        BackgroundColor="#D32F2F"
+                        HorizontalOptions="End"
+                        VerticalOptions="Start"
+                        Margin="0,7,7,0"
+                        IsVisible="{Binding HasUnreadNotifications}"
+                        SemanticProperties.Description="Unread notifications" />
+                </Grid>
+            </Border>
+
+            <!-- Settings icon button, right-aligned -->
+            <!-- FR-ST-03: AppThemeBinding ensures icon contrasts on both light and dark backgrounds -->
+            <Border
+                Grid.Column="2"
+                WidthRequest="44"
+                HeightRequest="44"
+                BackgroundColor="Transparent"
+                StrokeThickness="0"
+                VerticalOptions="Center"
+                SemanticProperties.Description="Open settings"
+                SemanticProperties.Hint="Navigate to app settings">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToSettingsCommand}" />
+                </Border.GestureRecognizers>
+                <Image
+                    Source="{AppThemeBinding Light=tab_settings.png, Dark=tab_settings_white.png}"
+                    WidthRequest="24"
+                    HeightRequest="24"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center" />
+            </Border>
+        </Grid>
+
+        <!-- ── Horizontal category strip (sticky) ────────────────────────── -->
+        <Grid
+            Grid.Row="2"
+            BackgroundColor="Transparent"
+            RowDefinitions="Auto,1">
+
+            <ScrollView
+                Grid.Row="0"
+                Orientation="Horizontal"
+                HorizontalScrollBarVisibility="Never">
+
+                <HorizontalStackLayout Spacing="0">
+
+                    <!-- Announcements -->
+                    <VerticalStackLayout>
+                        <Label
+                            Text="Announcements"
+                            Style="{StaticResource CategoryLabelStyle}"
+                            SemanticProperties.Description="Announcements category">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsTodaySelected}" Value="True">
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
+                                    <TapGestureRecognizer.CommandParameter>
+                                        <x:Int32>0</x:Int32>
+                                    </TapGestureRecognizer.CommandParameter>
+                                </TapGestureRecognizer>
+                            </Label.GestureRecognizers>
+                        </Label>
+                        <BoxView
+                            HeightRequest="2"
+                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                            IsVisible="{Binding IsTodaySelected}" />
+                    </VerticalStackLayout>
+
+                    <!-- Events -->
+                    <VerticalStackLayout>
+                        <Label
+                            Text="Events"
+                            Style="{StaticResource CategoryLabelStyle}"
+                            SemanticProperties.Description="Events category">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsEventsSelected}" Value="True">
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
+                                    <TapGestureRecognizer.CommandParameter>
+                                        <x:Int32>1</x:Int32>
+                                    </TapGestureRecognizer.CommandParameter>
+                                </TapGestureRecognizer>
+                            </Label.GestureRecognizers>
+                        </Label>
+                        <BoxView
+                            HeightRequest="2"
+                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                            IsVisible="{Binding IsEventsSelected}" />
+                    </VerticalStackLayout>
+
+                    <!-- About -->
+                    <VerticalStackLayout>
+                        <Label
+                            Text="About"
+                            Style="{StaticResource CategoryLabelStyle}"
+                            SemanticProperties.Description="About category">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsAboutSelected}" Value="True">
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
+                                    <TapGestureRecognizer.CommandParameter>
+                                        <x:Int32>2</x:Int32>
+                                    </TapGestureRecognizer.CommandParameter>
+                                </TapGestureRecognizer>
+                            </Label.GestureRecognizers>
+                        </Label>
+                        <BoxView
+                            HeightRequest="2"
+                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                            IsVisible="{Binding IsAboutSelected}" />
+                    </VerticalStackLayout>
+
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <!-- Bottom divider -->
+            <BoxView
+                Grid.Row="1"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+        </Grid>
+
+        <!-- ── Swipeable content pages ─────────────────────────────────── -->
+        <!-- SafeAreaEdges=None keeps this row edge-to-edge on every side.
+             Pull-to-refresh lives inside each tab template: a RefreshView wrapped
+             around the CarouselView never receives the vertical pull gesture. -->
+        <Grid
+            Grid.Row="3"
+            SafeAreaEdges="None">
+
+            <CarouselView
+                ItemsSource="{Binding CategoryPages}"
+                ItemTemplate="{StaticResource HomeShellTabTemplateSelector}"
+                Position="{Binding SelectedCategoryIndex, Mode=TwoWay}"
+                IsSwipeEnabled="True"
+                Loop="False"
+                HorizontalScrollBarVisibility="Never"
+                SemanticProperties.Description="Home category pages" />
+
+        </Grid>
+    </Grid>
+
+</ContentPage>

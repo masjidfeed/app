@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.PrayerTimesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:PrayerTimesViewModel"
+    BackgroundColor="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}"
+    Title="{Binding Title}">
+
+    <RefreshView
+        Command="{Binding RefreshCommand}"
+        IsRefreshing="{Binding IsBusy}">
+
+        <ScrollView>
+            <VerticalStackLayout Spacing="0">
+
+                <!-- ── Offline / Stale badge ─────────────────────────── -->
+                <Grid
+                    Padding="12,6"
+                    BackgroundColor="{DynamicResource ActivePrimarySoftColor}"
+                    IsVisible="{Binding ContentState.IsOffline}"
+                    SemanticProperties.Description="Showing cached prayer times">
+                    <Label
+                        Text="Showing cached times - offline"
+                        Style="{StaticResource TextCaption}"
+                        HorizontalOptions="Center"
+                        TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                </Grid>
+
+                <!-- ── Today's date header ────────────────────────────── -->
+                <VerticalStackLayout
+                    Padding="16,20,16,8"
+                    Spacing="4">
+                    <Label
+                        Text="{Binding MasjidName}"
+                        Style="{StaticResource TextSubheadStrong}"
+                        HorizontalOptions="Center"
+                        SemanticProperties.HeadingLevel="Level1"
+                        SemanticProperties.Description="{Binding MasjidName}" />
+                    <Label
+                        Text="{Binding TodayDateText}"
+                        Style="{StaticResource TextCaption}"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                        SemanticProperties.Description="{Binding TodayDateText}" />
+                </VerticalStackLayout>
+
+                <!-- ── Next prayer countdown (FR-PT-02) ──────────────── -->
+                <Border
+                    Margin="12,8"
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Background="{Binding CurrentPrayerName, Converter={StaticResource PrayerSkyGradientConverter}}"
+                    IsVisible="{Binding TodaySchedule, Converter={StaticResource IsNotNullConverter}}"
+                    SemanticProperties.Description="Countdown to next prayer">
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="{Binding NextPrayerName, StringFormat='Next: {0}'}"
+                            Style="{StaticResource TextBody}"
+                            HorizontalOptions="Center"
+                            TextColor="White"
+                            SemanticProperties.Description="{Binding NextPrayerName, StringFormat='Next prayer: {0}'}" />
+                        <Label
+                            Text="{Binding CountdownToNextPrayer, StringFormat='{0:hh\\:mm\\:ss}'}"
+                            Style="{StaticResource TextDisplay}"
+                            HorizontalOptions="Center"
+                            TextColor="White"
+                            SemanticProperties.Description="{Binding CountdownToNextPrayer, StringFormat='Time remaining: {0:hh\\:mm\\:ss}'}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Today's prayer list (FR-PT-01) ─────────────────── -->
+                <Border
+                    Margin="12,8"
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding TodaySchedule, Converter={StaticResource IsNotNullConverter}}">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Label
+                            Text="Today's Prayer Times"
+                            Style="{StaticResource TextBodyStrong}"
+                            Margin="0,0,0,12"
+                            SemanticProperties.HeadingLevel="Level2" />
+
+                                        <Grid ColumnDefinitions="26,*,Auto,Auto" Padding="0,0,0,6">
+                                <Label Grid.Column="1" Text="Prayer" Style="{StaticResource TextMicroStrong}"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                    <HorizontalStackLayout Grid.Column="2" WidthRequest="76" Spacing="4" HorizontalOptions="Center">
+                                        <Image Source="{AppThemeBinding Light=prayer_athan.png, Dark=prayer_athan_white.png}" WidthRequest="14" HeightRequest="14" AutomationProperties.IsInAccessibleTree="False" />
+                                        <Label Text="Athan" Style="{StaticResource TextMicroStrong}"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                    </HorizontalStackLayout>
+                                    <HorizontalStackLayout Grid.Column="3" WidthRequest="76" Spacing="4" HorizontalOptions="End">
+                                        <Image Source="{AppThemeBinding Light=prayer_iqama.png, Dark=prayer_iqama_white.png}" WidthRequest="14" HeightRequest="14" AutomationProperties.IsInAccessibleTree="False" />
+                                        <Label Text="Iqama" Style="{StaticResource TextMicroStrong}"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                    </HorizontalStackLayout>
+                        </Grid>
+
+                        <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" Margin="0,0,0,6" />
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding TodayPrayerRows}"
+                            AutomationId="TodayPrayerRowsLayout"
+                            SemanticProperties.Description="Today's prayer times">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:TodayPrayerRow">
+                                    <Grid ColumnDefinitions="26,*,Auto,Auto" Padding="8,7">
+                                        <Grid.Triggers>
+                                            <DataTrigger TargetType="Grid" Binding="{Binding IsCurrent}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{DynamicResource ActivePrimarySoftColor}" />
+                                            </DataTrigger>
+                                        </Grid.Triggers>
+
+                                             <!-- Two stacked glyphs (dark-on-light / white) because Image.Source
+                                                  cannot combine a Binding with an AppThemeBinding. -->
+                                             <Image Grid.Column="0"
+                                                 Source="{Binding IconSource}"
+                                                 IsVisible="{AppThemeBinding Light=True, Dark=False}"
+                                                 WidthRequest="20"
+                                                 HeightRequest="20"
+                                                 Aspect="AspectFit"
+                                                 VerticalOptions="Center"
+                                                 AutomationProperties.IsInAccessibleTree="False" />
+
+                                             <Image Grid.Column="0"
+                                                 Source="{Binding IconSourceDark}"
+                                                 IsVisible="{AppThemeBinding Light=False, Dark=True}"
+                                                 WidthRequest="20"
+                                                 HeightRequest="20"
+                                                 Aspect="AspectFit"
+                                                 VerticalOptions="Center"
+                                                 AutomationProperties.IsInAccessibleTree="False" />
+
+                                             <Label Grid.Column="1"
+                                               Margin="8,0,0,0"
+                                               Text="{Binding Name}"
+                                               Style="{StaticResource TextBody}"
+                                               VerticalOptions="Center"
+                                               SemanticProperties.Description="{Binding Name, StringFormat='{0} prayer'}">
+                                        </Label>
+
+                                        <Label Grid.Column="2"
+                                               Text="{Binding AthanText}"
+                                               WidthRequest="76"
+                                               Style="{StaticResource TextCaption}"
+                                               HorizontalTextAlignment="Center"
+                                               VerticalOptions="Center"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                               SemanticProperties.Description="{Binding AthanText, StringFormat='Athan at {0}'}" />
+                                        <Label Grid.Column="3"
+                                               Text="{Binding IqamaText}"
+                                               WidthRequest="76"
+                                               Style="{StaticResource TextBodyStrong}"
+                                               HorizontalTextAlignment="End"
+                                               VerticalOptions="Center"
+                                               SemanticProperties.Description="{Binding IqamaText, StringFormat='Iqama at {0}'}">
+                                        </Label>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── Jumuah section (FR-PT-03) - hidden only when none are published ─── -->
+                <Border
+                    Margin="12,8"
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding HasJumuah}"
+                    SemanticProperties.Description="Jumuah prayer sessions">
+                    <VerticalStackLayout Spacing="8">
+                        <FlexLayout
+                            Direction="Row"
+                            AlignItems="Start"
+                            JustifyContent="SpaceEvenly"
+                            BindableLayout.ItemsSource="{Binding JumuahPrayerRows}"
+                            AutomationId="JumuahRowsLayout">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:JumuahPrayerRow">
+                                    <VerticalStackLayout
+                                        FlexLayout.Grow="1"
+                                        FlexLayout.Basis="0"
+                                        Padding="6,8"
+                                        Spacing="8"
+                                        HorizontalOptions="Fill">
+                                        <Label
+                                            Text="{Binding TimeText}"
+                                            Style="{StaticResource TextBodyStrong}"
+                                            HorizontalTextAlignment="Center"
+                                            LineBreakMode="NoWrap"
+                                            SemanticProperties.Description="{Binding TimeText, StringFormat='Jumuah time: {0}'}" />
+                                        <Label
+                                            Text="{Binding Name}"
+                                            Style="{StaticResource TextBody}"
+                                            HorizontalTextAlignment="Center"
+                                            LineBreakMode="WordWrap"
+                                            MaxLines="2"
+                                            SemanticProperties.Description="{Binding Name}" />
+                                        <Label
+                                            Text="{Binding Location}"
+                                            Style="{StaticResource TextCaption}"
+                                            IsVisible="{Binding Location, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                            HorizontalTextAlignment="Center"
+                                            LineBreakMode="WordWrap"
+                                            MaxLines="2"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                            SemanticProperties.Description="{Binding Location, StringFormat='Location: {0}'}" />
+                                    </VerticalStackLayout>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ── 30-day view ────────────────────────────────────── -->
+                <Border
+                    Margin="12,8,12,20"
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    SemanticProperties.Description="30-day prayer schedule">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Label
+                            Text="Next 30 days"
+                            Style="{StaticResource TextBodyStrong}"
+                            Margin="0,0,0,12"
+                            SemanticProperties.HeadingLevel="Level2" />
+
+                        <!-- Column headers -->
+                        <Grid ColumnDefinitions="76,*,*,*,*,*" Padding="0,0,0,4">
+                            <Label Grid.Column="0" Text="Date" Style="{StaticResource TextMicroStrong}"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="1" Text="FJR" Style="{StaticResource TextMicroStrong}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="2" Text="DHR" Style="{StaticResource TextMicroStrong}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="3" Text="ASR" Style="{StaticResource TextMicroStrong}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="4" Text="MGB" Style="{StaticResource TextMicroStrong}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                            <Label Grid.Column="5" Text="ISH" Style="{StaticResource TextMicroStrong}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </Grid>
+
+                        <BoxView HeightRequest="1"
+                                 Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                 Margin="0,0,0,4" />
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding Next30DaySchedules}"
+                            AutomationId="Next30DayScheduleLayout"
+                            SemanticProperties.Description="Prayer times for the next 30 days">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PrayerScheduleDayRow">
+                                    <Grid ColumnDefinitions="76,*,*,*,*,*" Padding="6,6" RowSpacing="0">
+                                        <Grid.Triggers>
+                                            <DataTrigger TargetType="Grid" Binding="{Binding IsFriday}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Grid" Binding="{Binding IsToday}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{DynamicResource ActivePrimarySoftColor}" />
+                                            </DataTrigger>
+                                        </Grid.Triggers>
+
+                                        <Label Grid.Column="0"
+                                               Text="{Binding DateText}"
+                                               Style="{StaticResource TextCaption}"
+                                               VerticalOptions="Center"
+                                               SemanticProperties.Description="{Binding DateText}">
+                                        </Label>
+
+                                        <VerticalStackLayout Grid.Column="1" Spacing="0">
+                                            <Label Text="{Binding FajrAthanText}" Style="{StaticResource TextMicro}" HorizontalTextAlignment="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding FajrIqamaText}" Style="{StaticResource TextCaptionStrong}" HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="2" Spacing="0">
+                                            <Label Text="{Binding DhuhrAthanText}" Style="{StaticResource TextMicro}" HorizontalTextAlignment="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding DhuhrIqamaText}" Style="{StaticResource TextCaptionStrong}" HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="3" Spacing="0">
+                                            <Label Text="{Binding AsrAthanText}" Style="{StaticResource TextMicro}" HorizontalTextAlignment="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding AsrIqamaText}" Style="{StaticResource TextCaptionStrong}" HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="4" Spacing="0">
+                                            <Label Text="{Binding MaghribAthanText}" Style="{StaticResource TextMicro}" HorizontalTextAlignment="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding MaghribIqamaText}" Style="{StaticResource TextCaptionStrong}" HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="5" Spacing="0">
+                                            <Label Text="{Binding IshaAthanText}" Style="{StaticResource TextMicro}" HorizontalTextAlignment="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                            <Label Text="{Binding IshaIqamaText}" Style="{StaticResource TextCaptionStrong}" HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>

@@ -1,0 +1,422 @@
+# Builds the iOS app and uploads it to App Store Connect (docs/PUBLISHING.md Steps 2-6).
+#
+# This workflow does not reimplement the release logic: it recreates the same local
+# environment scripts/publish-appstore.sh already auto-detects from (a keychain holding
+# the distribution certificate, the App Store provisioning profiles, and
+# ~/.appstoreconnect), then runs that script unchanged. Anything fixed locally is fixed
+# here too.
+#
+# Required Key Vault credentials are listed in docs/PUBLISHING.md ("Publishing from GitHub").
+#
+# Runs only on manual dispatch - uploading a build should always be deliberate.
+
+name: Publish to App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number to publish. Leave empty to bump the current one by 1."
+        required: false
+        type: string
+      app_version:
+        description: "Marketing version, e.g. 1.1. Leave empty to keep the current one."
+        required: false
+        type: string
+      commit_version_bump:
+        description: "Commit the version bump back to the branch."
+        required: false
+        type: boolean
+        default: true
+
+# Needed only by the "Commit version bump" step.
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  publish:
+    name: Archive & upload
+    # iOS 26 SDK is required to build this project, so the image must ship Xcode 26.
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_PUBLISH_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI workload
+        # global.json pins workloadVersion, so this resolves the same iOS SDK pack the
+        # maintainer builds with. Without the pin, restore takes the newest workload set,
+        # which can demand an Xcode the image cannot supply.
+        run: |
+          set -euo pipefail
+          dotnet workload restore src/MasjidApp/MasjidApp.csproj
+          dotnet workload --info | head -2
+
+      # The script defaults to XCODE_APP=Xcode_26.5, which only exists on the maintainer's
+      # machine, so the runner has to pick its own. Two traps here:
+      #   - .NET for iOS validates Xcode major.minor EXACTLY (_ValidateXcodeVersion), and
+      #     the required version is NOT the pack's folder suffix: pack
+      #     Microsoft.iOS.Sdk.net10.0_26.5 has shipped revisions wanting Xcode 26.6. Read
+      #     _RecommendedXcodeVersion, which is the value the check compares against.
+      #   - actool is resolved by running xcodebuild against the literal MacOSX.sdk path
+      #     under the chosen bundle, and a failure there surfaces as the unhelpful
+      #     "SDK ... MacOSX.sdk cannot be located" / "actool exited with code 72".
+      #     Neither `test -d` on that path nor the `macosx` SDK alias is equivalent, so
+      #     the probe below runs the exact command .NET runs.
+      #   - The image exposes each Xcode under several names (Xcode.app, Xcode_26.5.app,
+      #     Xcode_26.5.0.app) where all but one are symlinks. Resolve to the real bundle
+      #     and point xcode-select at it, because tools that drop DEVELOPER_DIR fall back
+      #     to the system-wide selection and would otherwise look inside a different Xcode.
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+
+          dotnet_root="${DOTNET_ROOT:-$(dirname "$(command -v dotnet)")}"
+          props=$(ls "$dotnet_root"/packs/Microsoft.iOS.Sdk.net10.0_*/*/targets/Microsoft.iOS.Sdk.Versions.props \
+                     "$HOME"/.dotnet/packs/Microsoft.iOS.Sdk.net10.0_*/*/targets/Microsoft.iOS.Sdk.Versions.props \
+                     2>/dev/null | sort -V | tail -1 || true)
+          [ -n "$props" ] || {
+            echo "No Microsoft.iOS SDK pack under $dotnet_root - did the workload restore succeed?" >&2
+            exit 1
+          }
+          want=$(sed -n 's/.*<_RecommendedXcodeVersion>\([^<]*\)<.*/\1/p' "$props" | tail -1)
+          [ -n "$want" ] || {
+            echo "Could not read _RecommendedXcodeVersion from $props" >&2
+            exit 1
+          }
+          echo "$(basename "$(dirname "$(dirname "$props")")") requires Xcode $want"
+
+          # Match on the bundle's own version rather than its file name, and de-duplicate
+          # by real path so each physical Xcode is probed once.
+          selected=""
+          seen=""
+          echo "Xcode bundles on this image:"
+          for candidate in $(ls -d /Applications/Xcode*.app 2>/dev/null || true); do
+            real=$(cd "$candidate" 2>/dev/null && pwd -P) || continue
+            case " $seen " in *" $real "*) continue ;; esac
+            seen="$seen $real"
+
+            version=$(plutil -extract CFBundleShortVersionString raw \
+                      "$real/Contents/version.plist" 2>/dev/null || true)
+            [ -n "$version" ] || continue
+
+            if DEVELOPER_DIR="$real/Contents/Developer" \
+               "$real/Contents/Developer/usr/bin/xcodebuild" \
+                 -sdk "$real/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" \
+                 -find actool >/dev/null 2>&1; then
+              sdk="actool OK"
+            else
+              sdk="actool UNRESOLVABLE"
+            fi
+            echo "  $real -> $version ($sdk)"
+
+            if [ -z "$selected" ] &&
+               [ "$(printf '%s' "$version" | cut -d. -f1-2)" = "$want" ] &&
+               [ "$sdk" = "actool OK" ]; then
+              selected="$real"
+            fi
+          done
+
+          [ -n "$selected" ] || {
+            echo "No Xcode $want on this image can resolve actool. Either the runner image" >&2
+            echo "changed, or global.json's workloadVersion needs updating." >&2
+            exit 1
+          }
+
+          sudo xcode-select -s "$selected/Contents/Developer"
+          echo "XCODE_APP=$(basename "$selected" .app)" >> "$GITHUB_ENV"
+          echo "Selected $selected (xcode-select -p is now $(xcode-select -p))"
+
+      # Import the distribution certificate into a throwaway keychain and make it the ONLY
+      # keychain in the search list, so the script's "exactly one Apple Distribution
+      # identity" auto-detection is deterministic.
+      - name: Download and import signing certificate
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(openssl rand -base64 32)
+          echo "SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name ios-dist-cert-p12-base64 --file "$RUNNER_TEMP/cert.base64"
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name ios-dist-cert-password --file "$RUNNER_TEMP/cert-password"
+          openssl base64 -d -A -in "$RUNNER_TEMP/cert.base64" -out "$RUNNER_TEMP/cert.p12"
+
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
+            -P "$(cat "$RUNNER_TEMP/cert-password")" -A -t cert -f pkcs12
+          # Without this, codesign blocks on a GUI prompt for keychain access.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain"
+
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/cert.base64" "$RUNNER_TEMP/cert-password"
+          security find-identity -v -p codesigning "$keychain"
+
+      # Install into both directories the script (and MSBuild) search. Profiles are keyed
+      # by UUID so re-runs overwrite rather than accumulate.
+      - name: Download and install provisioning profiles
+        run: |
+          set -euo pipefail
+          xcode_dir="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          legacy_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$xcode_dir" "$legacy_dir"
+
+          install_profile() {
+            local encoded="$1" label="$2" tmp uuid name
+            if [ -z "$encoded" ]; then
+              echo "No $label profile provided."
+              return 0
+            fi
+            tmp=$(mktemp)
+            printf '%s' "$encoded" | openssl base64 -d -A > "$tmp"
+            uuid=$(security cms -D -i "$tmp" | plutil -extract UUID raw -)
+            name=$(security cms -D -i "$tmp" | plutil -extract Name raw -)
+            cp "$tmp" "$xcode_dir/$uuid.mobileprovision"
+            cp "$tmp" "$legacy_dir/$uuid.mobileprovision"
+            rm -f "$tmp"
+            echo "Installed $label profile: $name ($uuid)"
+          }
+
+          for profile in \
+            'ios-provisioning-profile-base64:app' \
+            'ios-widget-provisioning-profile-base64:widget' \
+            'ios-notification-service-profile-base64:notification service'; do
+            secret_name=${profile%%:*}
+            label=${profile#*:}
+            encoded=$(mktemp)
+            az keyvault secret download --vault-name masjidfeed-publish --name "$secret_name" --file "$encoded"
+            install_profile "$(cat "$encoded")" "$label"
+            rm -f "$encoded"
+          done
+
+      - name: Download App Store Connect API key
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          az keyvault secret download --vault-name masjidfeed-publish --name appstore-api-key-id --file "$RUNNER_TEMP/api-key-id"
+          az keyvault secret download --vault-name masjidfeed-publish --name appstore-api-issuer-id --file "$HOME/.appstoreconnect/issuer_id"
+          az keyvault secret download --vault-name masjidfeed-publish --name appstore-api-private-key-base64 --file "$RUNNER_TEMP/api-key.base64"
+          API_KEY_ID=$(cat "$RUNNER_TEMP/api-key-id")
+          openssl base64 -d -A -in "$RUNNER_TEMP/api-key.base64" \
+            -out "$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8"
+          chmod 600 "$HOME/.appstoreconnect/issuer_id"
+          rm -f "$RUNNER_TEMP/api-key-id" "$RUNNER_TEMP/api-key.base64"
+
+      # Everything else (signing identity, both profiles, key id, issuer id) is
+      # auto-detected from the environment the previous steps set up.
+      - name: Publish to App Store
+        id: publish
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
+          APP_VERSION: ${{ inputs.app_version }}
+          PUBLISHING_KEY_VAULT_NAME: ""
+          PUBLISH_ARTIFACTS_DIR: ${{ runner.temp }}/appstore-artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$PUBLISH_ARTIFACTS_DIR"
+          scripts/publish-appstore.sh 2>&1 |
+            tee "$PUBLISH_ARTIFACTS_DIR/publish-appstore.log"
+
+      # Preserve enough information to symbolicate the exact native/AOT binary and to
+      # reconstruct its managed dependency context. This runs even when App Store
+      # validation/upload fails, because those failures are often the runs whose archive
+      # needs inspection. Pre-compress bundles with ditto so executable permissions,
+      # symlinks, and macOS metadata survive actions/upload-artifact.
+      - name: Prepare crash-debugging artifacts
+        if: always()
+        id: crash_artifacts
+        env:
+          ARTIFACTS_DIR: ${{ runner.temp }}/appstore-artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACTS_DIR"
+
+          archives_root="$HOME/Library/Developer/Xcode/Archives"
+          archive=""
+          if [ -d "$archives_root" ]; then
+            archive=$(
+              find "$archives_root" -type d -name '*.xcarchive' \
+                -exec stat -f '%m|%N' {} \; |
+                sort -t'|' -k1,1nr | sed -n '1s/^[^|]*|//p'
+            )
+          fi
+          if [ -z "$archive" ]; then
+            echo "No xcarchive was produced; only the publish log can be retained."
+            if [ -f "$ARTIFACTS_DIR/publish-appstore.log" ]; then
+              echo "available=true" >> "$GITHUB_OUTPUT"
+              echo "name=ios-publish-diagnostics-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+                >> "$GITHUB_OUTPUT"
+            else
+              echo "available=false" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
+
+          app="$archive/Products/Applications/MasjidApp.app"
+          dsym="$archive/dSYMs/MasjidApp.app.dSYM"
+          binary="$app/MasjidApp"
+          dwarf="$dsym/Contents/Resources/DWARF/MasjidApp"
+          for required in "$app/Info.plist" "$binary" "$dwarf"; do
+            [ -e "$required" ] || {
+              echo "Required crash-debugging artifact is missing: $required" >&2
+              exit 1
+            }
+          done
+
+          version=$(plutil -extract CFBundleShortVersionString raw "$app/Info.plist")
+          build=$(plutil -extract CFBundleVersion raw "$app/Info.plist")
+          prefix="MasjidApp-${version}-${build}-${GITHUB_SHA:0:12}"
+
+          app_uuids=$(xcrun dwarfdump --uuid "$binary" | awk '{print $2}' | sort)
+          dsym_uuids=$(xcrun dwarfdump --uuid "$dwarf" | awk '{print $2}' | sort)
+          if [ "$app_uuids" != "$dsym_uuids" ]; then
+            echo "App and dSYM UUIDs do not match." >&2
+            echo "App:  $app_uuids" >&2
+            echo "dSYM: $dsym_uuids" >&2
+            exit 1
+          fi
+
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$archive" "$ARTIFACTS_DIR/$prefix.xcarchive.zip"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$archive/dSYMs" "$ARTIFACTS_DIR/$prefix.dSYMs.zip"
+
+          managed=$(mktemp -d)
+          mkdir -p "$managed/compiled" "$managed/linked"
+          for file in src/MasjidApp/bin/Release/net10.0-ios/ios-arm64/MasjidApp*.dll \
+                      src/MasjidApp/bin/Release/net10.0-ios/ios-arm64/MasjidApp*.pdb \
+                      src/MasjidApp/bin/Release/net10.0-ios/ios-arm64/MasjidApp*.runtimeconfig.json; do
+            [ -f "$file" ] && cp "$file" "$managed/compiled/"
+          done
+          for file in src/MasjidApp/obj/Release/net10.0-ios/ios-arm64/linked/MasjidApp*.dll \
+                      src/MasjidApp/obj/Release/net10.0-ios/ios-arm64/linked/MasjidApp*.pdb; do
+            [ -f "$file" ] && cp "$file" "$managed/linked/"
+          done
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$managed" "$ARTIFACTS_DIR/$prefix.managed-symbols.zip"
+          rm -rf "$managed"
+
+          metadata="$ARTIFACTS_DIR/metadata"
+          mkdir -p "$metadata/project"
+          cp global.json Directory.Build.props src/MasjidApp/MasjidApp.csproj \
+             src/MasjidApp.Core/MasjidApp.Core.csproj "$metadata/project/"
+          for assets in src/MasjidApp/obj/project.assets.json \
+                        src/MasjidApp.Core/obj/project.assets.json; do
+            if [ -f "$assets" ]; then
+              target=$(printf '%s' "$assets" | tr '/' '-')
+              cp "$assets" "$metadata/project/$target"
+            fi
+          done
+
+          {
+            echo "repository=$GITHUB_REPOSITORY"
+            echo "commit=$GITHUB_SHA"
+            echo "source_tree=$(git rev-parse 'HEAD^{tree}')"
+            echo "workflow_run_id=$GITHUB_RUN_ID"
+            echo "workflow_run_attempt=$GITHUB_RUN_ATTEMPT"
+            echo "app_version=$version"
+            echo "build_number=$build"
+            echo "archive=$(basename "$archive")"
+            echo "app_uuid=$(printf '%s' "$app_uuids" | paste -sd, -)"
+          } > "$metadata/build-manifest.txt"
+          git status --short > "$metadata/git-status.txt"
+          git diff -- src/MasjidApp/MasjidApp.csproj \
+                       src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist \
+                       src/MasjidApp/Platforms/iOS/NotificationServiceExtension/Info.plist \
+            > "$metadata/version-bump.diff"
+          xcrun dwarfdump --uuid "$binary" > "$metadata/app-uuids.txt"
+          find "$archive/dSYMs" -type f -path '*/Contents/Resources/DWARF/*' \
+            -exec xcrun dwarfdump --uuid {} \; > "$metadata/dsym-uuids.txt"
+          codesign -dvv "$app" > "$metadata/codesign.txt" 2>&1
+          codesign -d --entitlements :- "$app" \
+            > "$metadata/app-entitlements.plist" 2>/dev/null
+          for extension in \
+            "$app/PlugIns/MasjidWidgetExtension.appex" \
+            "$app/PlugIns/MasjidNotificationServiceExtension.appex"; do
+            [ -d "$extension" ] || continue
+            extension_name=$(basename "$extension" .appex)
+            codesign -dvv "$extension" \
+              > "$metadata/${extension_name}-codesign.txt" 2>&1
+            codesign -d --entitlements :- "$extension" \
+              > "$metadata/${extension_name}-entitlements.plist" 2>/dev/null
+          done
+          dotnet --info > "$metadata/dotnet-info.txt"
+          dotnet workload list > "$metadata/dotnet-workloads.txt"
+          xcodebuild -version > "$metadata/xcode-version.txt"
+          sw_vers > "$metadata/macos-version.txt"
+
+          checksums=$(mktemp)
+          (
+            cd "$ARTIFACTS_DIR"
+            find . -type f ! -name CHECKSUMS.sha256 \
+              -exec shasum -a 256 {} \; | sort
+          ) > "$checksums"
+          mv "$checksums" "$ARTIFACTS_DIR/CHECKSUMS.sha256"
+
+          echo "Retained crash symbols for UUID(s): $app_uuids"
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "name=ios-crash-debug-${version}-${build}-${GITHUB_SHA:0:12}-run${GITHUB_RUN_ATTEMPT}" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Upload crash-debugging artifacts
+        if: always() && steps.crash_artifacts.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.crash_artifacts.outputs.name }}
+          path: ${{ runner.temp }}/appstore-artifacts
+          if-no-files-found: error
+          retention-days: 90
+          # The large bundles are already zip/IPA files; avoid recompressing them.
+          compression-level: 0
+
+      # The script bumps ApplicationVersion in the repo. Without pushing that back, the
+      # next run would reuse the same build number and App Store Connect would reject it.
+      - name: Commit version bump
+        # Do this after a successful publish even if artifact packaging/upload failed;
+        # otherwise the next run would retry an App Store build number that already exists.
+        if: always() && inputs.commit_version_bump && steps.publish.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git add src/MasjidApp/MasjidApp.csproj \
+                  src/MasjidApp/Platforms/iOS/Info.plist \
+                  src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist
+          if git diff --cached --quiet; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          build=$(grep -o '<ApplicationVersion>[^<]*' src/MasjidApp/MasjidApp.csproj |
+                  sed 's/.*>//')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(ios): bump build number to $build"
+          git pull --rebase --autostash
+          git push
+
+      - name: Clean up credentials
+        if: always()
+        run: |
+          security delete-keychain "${SIGNING_KEYCHAIN:-}" 2>/dev/null || true
+          rm -rf "$HOME/.appstoreconnect"

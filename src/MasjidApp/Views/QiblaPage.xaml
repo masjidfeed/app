@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.QiblaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:QiblaViewModel"
+    Title="{Binding Title}">
+
+    <!-- FR-CM-03, NFR-PR-01, NFR-AC-01: Qibla compass with graceful sensor/permission fallback. -->
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="24"
+            Spacing="20"
+            VerticalOptions="Center">
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center" />
+
+            <!-- Compass display (visible when location granted) -->
+            <VerticalStackLayout
+                Spacing="16"
+                IsVisible="{Binding IsLocationGranted}"
+                HorizontalOptions="Center"
+                SemanticProperties.Description="Qibla compass">
+
+                <!-- Compass circle with rotating needle -->
+                <Grid
+                    WidthRequest="240"
+                    HeightRequest="240"
+                    HorizontalOptions="Center"
+                    AutomationId="QiblaCompassGrid">
+
+                    <!-- Background circle -->
+                    <Border
+                        WidthRequest="240"
+                        HeightRequest="240"
+                        StrokeShape="RoundRectangle 120"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        StrokeThickness="3"
+                        BackgroundColor="{AppThemeBinding Light=White, Dark=#1C1C1E}" />
+
+                    <!-- Rotating N/S/E/W ring: labels track real-world directions (B7).
+                         Ring rotates by DialRotation (= −CompassHeading) so N always
+                         points to magnetic north as the device turns. -->
+                    <Grid
+                        WidthRequest="240"
+                        HeightRequest="240"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill"
+                        Rotation="{Binding DialRotation}"
+                        AutomationId="QiblaCompassRing">
+                        <Label
+                            Text="N"
+                            Style="{StaticResource TextSubheadStrong}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Start"
+                            Margin="0,12,0,0"
+                            SemanticProperties.Description="North" />
+                        <Label
+                            Text="S"
+                            Style="{StaticResource TextSubheadStrong}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="End"
+                            Margin="0,0,0,12"
+                            SemanticProperties.Description="South" />
+                        <Label
+                            Text="E"
+                            Style="{StaticResource TextSubheadStrong}"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,12,0"
+                            SemanticProperties.Description="East" />
+                        <Label
+                            Text="W"
+                            Style="{StaticResource TextSubheadStrong}"
+                            HorizontalOptions="Start"
+                            VerticalOptions="Center"
+                            Margin="12,0,0,0"
+                            SemanticProperties.Description="West" />
+                    </Grid>
+
+                    <!-- Kaaba icon: centred and static - does not rotate (B7). ~1/3 of 240 px dial. -->
+                    <Image
+                        Source="kaaba.png"
+                        WidthRequest="80"
+                        HeightRequest="80"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        SemanticProperties.Description="Kaaba" />
+
+                    <!-- Golden chevron indicator: points toward Qibla, rotates by NeedleRotation (B7).
+                         Circumflex (∧) shape positioned near the ring edge inside the dial.
+                         Points are within the 240×240 grid (centre 120,120):
+                           tip (120,22), outer arms (100,50)/(140,50), inner arms (110,50)/(130,50),
+                           inner apex (120,34) → hollow chevron. -->
+                    <Grid
+                        WidthRequest="240"
+                        HeightRequest="240"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill"
+                        Rotation="{Binding NeedleRotation}"
+                        AutomationId="QiblaCompassNeedle"
+                        SemanticProperties.Description="Qibla direction needle">
+                        <Polygon
+                            Points="120,22 100,50 110,50 120,34 130,50 140,50"
+                            Fill="{StaticResource QiblaGold}"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill"
+                            SemanticProperties.Description="Qibla direction indicator" />
+                    </Grid>
+
+                </Grid>
+
+                <!-- Bearing degrees label -->
+                <Label
+                    Text="{Binding BearingDegrees, StringFormat='{0:F1}°'}"
+                    Style="{StaticResource TextDisplay}"
+                    HorizontalOptions="Center"
+                    SemanticProperties.Description="{Binding BearingDegrees, StringFormat='Qibla bearing {0:F1} degrees'}" />
+
+                <!-- Calibration hint (shown when sensor is unavailable) -->
+                <Label
+                    Text="For best accuracy, move your device in a figure-8 pattern to calibrate the compass."
+                    Style="{StaticResource TextCaption}"
+                    HorizontalOptions="Center"
+                    HorizontalTextAlignment="Center"
+                    IsVisible="{Binding HasSensor, Converter={StaticResource InvertBoolConverter}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                    SemanticProperties.Description="Compass calibration hint" />
+
+            </VerticalStackLayout>
+
+            <!-- Status / error message -->
+            <Label
+                Text="{Binding StatusMessage}"
+                Style="{StaticResource TextBody}"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding StatusMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                SemanticProperties.Description="{Binding StatusMessage}" />
+
+            <!-- Location permission rationale (shown before permission is granted) -->
+            <VerticalStackLayout
+                Spacing="12"
+                IsVisible="{Binding IsLocationGranted, Converter={StaticResource InvertBoolConverter}}"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}">
+
+                <Label
+                    Text="Location access is needed to calculate the Qibla direction accurately. Only your approximate location is used and is never stored or shared."
+                    Style="{StaticResource TextBody}"
+                    HorizontalTextAlignment="Center"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                    SemanticProperties.Description="Location permission rationale" />
+
+                <Button
+                    Text="Allow Location"
+                    Command="{Binding LoadCommand}"
+                    HorizontalOptions="Center"
+                    SemanticProperties.Description="Allow location access for Qibla" />
+
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,16 @@
+<!-- Shared MSBuild properties applied to every project in the repo. -->
+<!-- Enforces the C# conventions in .github/instructions/csharp.instructions.md -->
+<!-- and the warnings-as-errors policy from the Definition of Done (QA-01). -->
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Don't fail the build on missing XML doc comments (CS1591); QA-05 is enforced by review. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

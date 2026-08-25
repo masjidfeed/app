@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="MasjidApp.Controls.LocationMapPreview"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MasjidApp.Controls"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    x:DataType="controls:LocationMapPreview">
+
+    <Border
+        HeightRequest="156"
+        StrokeThickness="0"
+        StrokeShape="RoundRectangle 12"
+        SemanticProperties.Description="{Binding AccessibilityDescription, Source={x:Reference Root}}">
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer
+                Command="{Binding OpenMapCommand, Source={x:Reference Root}}" />
+        </Border.GestureRecognizers>
+
+        <Grid>
+            <Grid
+                x:Name="MapHost"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}" />
+
+            <Grid
+                x:Name="FallbackContent"
+                Padding="20"
+                BackgroundColor="{DynamicResource ActivePrimaryColor}">
+                <VerticalStackLayout
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Spacing="6">
+                    <Image
+                        Source="about_location.png"
+                        WidthRequest="28"
+                        HeightRequest="28"
+                        HorizontalOptions="Center"
+                        SemanticProperties.Description="{l:Localize About_Map_PinDescription}" />
+                    <Label
+                        Text="{Binding Address, Source={x:Reference Root}}"
+                        Style="{StaticResource TextCaption}"
+                        TextColor="White"
+                        HorizontalTextAlignment="Center"
+                        MaxLines="2"
+                        LineBreakMode="WordWrap" />
+                    <Label
+                        Text="{l:Localize About_Map_OpenHint}"
+                        Style="{StaticResource TextMicro}"
+                        TextColor="White"
+                        Opacity="0.8"
+                        HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <Border
+                x:Name="MapAddressCard"
+                Margin="10"
+                Padding="10,7"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 8"
+                BackgroundColor="#4A4A4A"
+                HorizontalOptions="Fill"
+                VerticalOptions="End"
+                IsVisible="False">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Label
+                        Text="{Binding Address, Source={x:Reference Root}}"
+                        Style="{StaticResource TextCaption}"
+                        TextColor="White"
+                        MaxLines="2"
+                        LineBreakMode="TailTruncation"
+                        VerticalOptions="Center" />
+                    <Label
+                        Grid.Column="1"
+                        Text="{l:Localize About_Map_OpenHint}"
+                        Style="{StaticResource TextMicroStrong}"
+                        TextColor="White"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</ContentView>

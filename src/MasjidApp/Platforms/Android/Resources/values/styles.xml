@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="system_status_bar_background">#FFFFFFFF</color>
+    <color name="system_navigation_bar_background">#FFFFFFFF</color>
+    <color name="colorPrimary">@color/system_status_bar_background</color>
+    <color name="colorPrimaryDark">@color/system_status_bar_background</color>
+    <bool name="system_bar_light_appearance">true</bool>
+
+    <!--
+        Maui.SplashTheme - shown by MainActivity before MAUI is ready to render.
+        windowBackground references the plain-white maui_splash_screen drawable.
+        Android 12+ overrides this through values-v31/styles.xml.
+    -->
+    <style name="Maui.SplashTheme" parent="Maui.MainTheme.NoActionBar">
+        <item name="maui_splash">true</item>
+        <item name="android:windowBackground">@drawable/maui_splash_screen</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/system_status_bar_background</item>
+        <item name="android:navigationBarColor">@color/system_navigation_bar_background</item>
+        <item name="android:windowLightStatusBar">@bool/system_bar_light_appearance</item>
+        <item name="android:windowLightNavigationBar">@bool/system_bar_light_appearance</item>
+    </style>
+</resources>

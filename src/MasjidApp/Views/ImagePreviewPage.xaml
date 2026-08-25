@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.ImagePreviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:ImagePreviewViewModel"
+    Title=""
+    BackgroundColor="Black"
+    Shell.NavBarIsVisible="True">
+
+    <Grid>
+        <Image
+            Source="{Binding ImageUrl}"
+            Aspect="AspectFit"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill"
+            SemanticProperties.Description="Full-screen image preview" />
+    </Grid>
+
+</ContentPage>

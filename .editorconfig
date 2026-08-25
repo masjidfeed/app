@@ -1,0 +1,59 @@
+# EditorConfig for the Masjid App - enforced in CI via `dotnet format` (QA-01).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx}]
+indent_size = 4
+
+[*.{xml,csproj,props,targets,xaml}]
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# Language conventions (see .github/instructions/csharp.instructions.md)
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+csharp_prefer_braces = true:warning
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_members = when_on_single_line:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+
+# Nullable / quality
+dotnet_diagnostic.CS8600.severity = error
+dotnet_diagnostic.CS8602.severity = error
+dotnet_diagnostic.CS8625.severity = error
+
+# Naming: interfaces must start with 'I'
+dotnet_naming_rule.interfaces_start_with_i.symbols = interface_symbol
+dotnet_naming_rule.interfaces_start_with_i.style = i_prefix_style
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_symbols.interface_symbol.applicable_kinds = interface
+dotnet_naming_style.i_prefix_style.capitalization = pascal_case
+dotnet_naming_style.i_prefix_style.required_prefix = I
+
+# Naming: private fields use _camelCase
+dotnet_naming_rule.private_fields_underscore.symbols = private_field_symbol
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel_style
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_symbols.private_field_symbol.applicable_kinds = field
+dotnet_naming_symbols.private_field_symbol.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_style.required_prefix = _
+
+# Platform entry-point glue (AppDelegate, SceneDelegate, MainActivity, MainApplication)
+# uses framework-mandated type names; exempt them from API-naming analyzers (e.g. CA1711).
+[**/Platforms/**/*.cs]
+dotnet_diagnostic.CA1711.severity = none
+

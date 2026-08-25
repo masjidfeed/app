@@ -1,0 +1,71 @@
+{
+  "salahapi": "1.1",
+  "info": {
+    "title": "Islamic Center of Bothell Prayer Times",
+    "description": "Sample SalahAPI 1.1 document for local development (DV-04).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Islamic Center of Bothell",
+      "email": "info@bothellmosque.org"
+    }
+  },
+  "location": {
+    "latitude": 47.7623,
+    "longitude": -122.2054,
+    "elevation": 30,
+    "timezone": "America/Los_Angeles",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "h:mm A"
+  },
+  "calculationMethod": {
+    "name": "ISNA",
+    "asrCalculationMethod": "Standard",
+    "highLatitudeAdjustment": "AngleBased",
+    "iqamaCalculationRules": {
+      "changeOn": "friday",
+      "fajr": {
+        "change": "weekly",
+        "afterAthanMinutes": 20,
+        "roundMinutes": 5,
+        "overrides": [
+          { "condition": "ramadan", "time": { "afterAthanMinutes": 25 } }
+        ]
+      },
+      "dhuhr": { "static": "13:30" },
+      "asr": { "afterAthanMinutes": 15, "roundMinutes": 5 },
+      "maghrib": { "afterAthanMinutes": 5 },
+      "isha": {
+        "afterAthanMinutes": 15,
+        "roundMinutes": 5,
+        "earliest": "20:00",
+        "latest": "22:30",
+        "overrides": [
+          { "condition": "daylightSavingsTime", "time": { "afterAthanMinutes": 15, "latest": "23:00" } },
+          { "condition": "ramadan", "time": { "static": "22:00" } }
+        ]
+      }
+    },
+    "jumuahRules": [
+      {
+        "name": "First Jumuah",
+        "time": { "static": "13:00" },
+        "location": { "name": "Main Prayer Hall", "address": "10921 NE 191st St, Bothell, WA 98011, USA" }
+      },
+      {
+        "name": "Second Jumuah",
+        "time": { "static": "14:15" },
+        "location": { "name": "Community Hall", "address": "10921 NE 191st St, Bothell, WA 98011, USA" }
+      }
+    ]
+  },
+  "dailyPrayerTimes": {
+    "csvUrl": "http://localhost:8090/prayer-times.csv",
+    "csvUrlParameters": {
+      "fromDate": "2026-06-01",
+      "toDate": "2026-06-30",
+      "static": { "format": "24h" }
+    },
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "h:mm A"
+  }
+}

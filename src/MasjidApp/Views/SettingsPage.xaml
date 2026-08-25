@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:theming="clr-namespace:MasjidApp.Core.Theming;assembly=MasjidApp.Core"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    x:DataType="vm:SettingsViewModel"
+    Title="{Binding Title}"
+    Background="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}">
+
+    <!-- FR-ST-01, FR-ST-02, FR-ST-03, FR-ST-05, NFR-PR-02 -->
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- ── Section: Masjid ────────────────────────────────────────── -->
+            <Label
+                Text="Masjid"
+                Style="{StaticResource TextCaptionStrong}"
+                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Masjid section" />
+
+            <Border Padding="0" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                <Grid Padding="16,14" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ChangeMasjidCommand}" />
+                    </Grid.GestureRecognizers>
+
+                    <Label
+                        Grid.Row="0" Grid.Column="0"
+                        Text="Active Masjid"
+                        Style="{StaticResource TextCaption}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                        SemanticProperties.Description="Label: Active Masjid" />
+
+                    <Label
+                        Grid.Row="1" Grid.Column="0"
+                        Text="{Binding ActiveMasjidName}"
+                        Style="{StaticResource TextSubheadStrong}"
+                        SemanticProperties.Description="{Binding ActiveMasjidName}" />
+
+                          <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                              Text="›" Style="{StaticResource GlyphAccessory}" VerticalOptions="Center"
+                              TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                              SemanticProperties.Description="Change active masjid" />
+                </Grid>
+            </Border>
+
+            <!-- ── Section: Appearance ───────────────────────────────────── -->
+            <Label
+                Text="Appearance"
+                Style="{StaticResource TextCaptionStrong}"
+                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Appearance section" />
+
+            <Border Padding="0" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                <VerticalStackLayout Spacing="0">
+
+                    <!-- Theme row (FR-ST-03) -->
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenAppearanceCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Column="0"
+                            Text="Appearance"
+                            Style="{StaticResource TextSubhead}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="App appearance" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding SelectedThemeDisplay}"
+                            Style="{StaticResource TextBody}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="{Binding SelectedThemeDisplay, StringFormat='Current theme: {0}'}" />
+                        <Label Grid.Column="2" Text="›" Style="{StaticResource GlyphAccessory}" Margin="8,0,0,0"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Margin="16,0,0,0" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                    <!-- 24-hour time row (FR-ST-03) -->
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <Label
+                            Grid.Column="0"
+                            Text="24-Hour Time"
+                            Style="{StaticResource TextSubhead}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Use 24-hour time format" />
+                        <Switch
+                            Grid.Column="1"
+                            IsToggled="{Binding Is24HourTime}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Toggle 24-hour time format" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Section: Notifications ────────────────────────────────── -->
+            <Label
+                Text="Notifications"
+                Style="{StaticResource TextCaptionStrong}"
+                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Notifications section" />
+
+            <Border Padding="0" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                <VerticalStackLayout Spacing="0">
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                            <Label
+                                Text="{l:Localize Settings_PushNotifications_Label}"
+                                Style="{StaticResource TextSubhead}"
+                                SemanticProperties.Description="Announcement notifications" />
+                            <Label
+                                Text="{l:Localize Settings_PushNotifications_Description}"
+                                Style="{StaticResource TextCaption}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                SemanticProperties.Description="Notify me of important updates" />
+                        </VerticalStackLayout>
+                        <Switch
+                            Grid.Column="1"
+                            IsToggled="{Binding PushNotificationsEnabled}"
+                            IsEnabled="{Binding CanChangePushNotifications}"
+                            Toggled="OnPushNotificationsToggled"
+                            VerticalOptions="Center"
+                            AutomationId="AnnouncementsNotificationsSwitch"
+                            SemanticProperties.Description="Toggle announcement notifications" />
+                    </Grid>
+
+                    <Label
+                        Margin="16,0,16,12"
+                        Text="{Binding PushNotificationStatus}"
+                        IsVisible="{Binding PushNotificationStatus, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                        Style="{StaticResource TextCaption}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                        SemanticProperties.Description="{Binding PushNotificationStatus}" />
+
+                    <BoxView HeightRequest="1" Margin="16,0,0,0"
+                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <Label
+                            Grid.Column="0"
+                            Text="{l:Localize Settings_Notifications_Section}"
+                            Style="{StaticResource TextSubhead}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Enable iqama reminders for all five daily prayers" />
+                        <Switch
+                            Grid.Column="1"
+                            IsToggled="{Binding PrayerRemindersEnabled}"
+                            IsEnabled="{Binding CanChangePrayerReminderSettings}"
+                            Toggled="OnPrayerRemindersToggled"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Toggle iqama reminders" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Margin="16,0,0,0"
+                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                    <Grid
+                        Padding="16,14"
+                        ColumnDefinitions="*,Auto,Auto"
+                        IsEnabled="{Binding CanChangePrayerReminderLeadTime}">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenPrayerReminderLeadTimeCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Column="0"
+                            Text="{l:Localize Settings_PrayerReminder_LeadTime_Label}"
+                            Style="{StaticResource TextSubhead}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Choose how long before iqama to receive a reminder" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding SelectedPrayerReminderLeadTimeDisplay}"
+                            Style="{StaticResource TextBody}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="{Binding SelectedPrayerReminderLeadTimeDisplay, StringFormat='Current iqama reminder lead time: {0}'}" />
+                        <Label
+                            Grid.Column="2"
+                            Text="›"
+                            Style="{StaticResource GlyphAccessory}"
+                            Margin="8,0,0,0"
+                            VerticalOptions="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </Grid>
+
+                    <Label
+                        Margin="16,0,16,12"
+                        Text="{Binding PrayerReminderStatus}"
+                        IsVisible="{Binding PrayerReminderStatus, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                        Style="{StaticResource TextCaption}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                        SemanticProperties.Description="{Binding PrayerReminderStatus}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Section: About ─────────────────────────────────────────── -->
+            <Label
+                Text="About"
+                Style="{StaticResource TextCaptionStrong}"
+                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="About section" />
+
+            <Border Padding="0" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
+                <VerticalStackLayout Spacing="0">
+
+                    <!-- App version (FR-ST-05) -->
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <Label
+                            Grid.Column="0"
+                            Text="Version"
+                            Style="{StaticResource TextSubhead}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Application version" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding AppVersion}"
+                            Style="{StaticResource TextBody}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="{Binding AppVersion, StringFormat='Version {0}'}" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Margin="16,0,0,0" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                    <!-- Telemetry consent toggle (NFR-OB-01) -->
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                            <Label
+                                Text="Share anonymous usage data"
+                                Style="{StaticResource TextSubhead}"
+                                SemanticProperties.Description="Share anonymous usage data to help improve the app" />
+                            <Label
+                                Text="No personal data is collected"
+                                Style="{StaticResource TextCaption}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                SemanticProperties.Description="No personal data is collected" />
+                        </VerticalStackLayout>
+                        <Switch
+                            Grid.Column="1"
+                            IsToggled="{Binding TelemetryConsentEnabled}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Description="Toggle sharing anonymous usage data" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Margin="16,0,0,0" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+
+                    <!-- Privacy policy link (NFR-PR-02) -->
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ViewPrivacyPolicyCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label Text="Privacy Policy" Style="{StaticResource TextSubhead}" VerticalOptions="Center"
+                               SemanticProperties.Description="Open privacy policy" />
+                        <Label Grid.Column="1" Text="›" Style="{StaticResource GlyphAccessory}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.ContactPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:ContactViewModel"
+    Title="{Binding Title}"
+    Background="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}">
+
+    <!-- FR-CM-02, FR-CM-04: contact details with quick-action buttons. -->
+
+    <RefreshView
+        Command="{Binding RefreshCommand}"
+        IsRefreshing="{Binding IsBusy}">
+
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+
+                <ActivityIndicator
+                    IsRunning="{Binding IsBusy}"
+                    IsVisible="{Binding IsBusy}"
+                    HorizontalOptions="Center" />
+
+                <!-- Masjid name heading -->
+                <Label
+                    Text="{Binding MasjidName}"
+                    Style="{StaticResource TextTitle}"
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding MasjidName, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.HeadingLevel="Level1"
+                    SemanticProperties.Description="{Binding MasjidName}" />
+
+                <!-- Address -->
+                <Border
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding Address, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.Description="Address section">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenMapCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Row="0" Grid.Column="0"
+                            Text="Address"
+                            Style="{StaticResource TextCaptionStrong}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Label: Address" />
+                        <Label
+                            Grid.Row="1" Grid.Column="0"
+                            Text="{Binding Address}"
+                            Style="{StaticResource TextBody}"
+                            SemanticProperties.Description="{Binding Address}" />
+                        <Label
+                            Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                            Text="›"
+                            Style="{StaticResource GlyphAccessory}"
+                            VerticalOptions="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Open address in Maps" />
+                    </Grid>
+                </Border>
+
+                <!-- Phone -->
+                <Border
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding Phone, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.Description="Phone section">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CallPhoneCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Row="0" Grid.Column="0"
+                            Text="Phone"
+                            Style="{StaticResource TextCaptionStrong}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Label: Phone" />
+                        <Label
+                            Grid.Row="1" Grid.Column="0"
+                            Text="{Binding Phone}"
+                            Style="{StaticResource TextBody}"
+                            SemanticProperties.Description="{Binding Phone}" />
+                        <Label
+                            Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                            Text="›"
+                            Style="{StaticResource GlyphAccessory}"
+                            VerticalOptions="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Call phone number" />
+                    </Grid>
+                </Border>
+
+                <!-- Email -->
+                <Border
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding Email, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.Description="Email section">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SendEmailCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Row="0" Grid.Column="0"
+                            Text="Email"
+                            Style="{StaticResource TextCaptionStrong}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Label: Email" />
+                        <Label
+                            Grid.Row="1" Grid.Column="0"
+                            Text="{Binding Email}"
+                            Style="{StaticResource TextBody}"
+                            SemanticProperties.Description="{Binding Email}" />
+                        <Label
+                            Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                            Text="›"
+                            Style="{StaticResource GlyphAccessory}"
+                            VerticalOptions="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Send email" />
+                    </Grid>
+                </Border>
+
+                <!-- Website -->
+                <Border
+                    Padding="16"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 8"
+                    Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    IsVisible="{Binding Website, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                    SemanticProperties.Description="Website section">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenWebsiteCommand}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Grid.Row="0" Grid.Column="0"
+                            Text="Website"
+                            Style="{StaticResource TextCaptionStrong}"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Label: Website" />
+                        <Label
+                            Grid.Row="1" Grid.Column="0"
+                            Text="{Binding Website}"
+                            Style="{StaticResource TextBody}"
+                            SemanticProperties.Description="{Binding Website}" />
+                        <Label
+                            Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                            Text="›"
+                            Style="{StaticResource GlyphAccessory}"
+                            VerticalOptions="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                            SemanticProperties.Description="Open website" />
+                    </Grid>
+                </Border>
+
+                <!-- Social media links (optional) -->
+                <VerticalStackLayout
+                    Spacing="8"
+                    IsVisible="{Binding HasSocialLinks}"
+                    SemanticProperties.Description="Social media links">
+
+                    <Label
+                        Text="Follow Us"
+                        Style="{StaticResource TextSubheadStrong}"
+                        SemanticProperties.HeadingLevel="Level2" />
+
+                    <Border Padding="16,12" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                        Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                        IsVisible="{Binding Facebook, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                        SemanticProperties.Description="Open Facebook page">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenFacebookCommand}" />
+                            </Grid.GestureRecognizers>
+                            <Label Text="Facebook" Style="{StaticResource TextSubhead}" />
+                            <Label Grid.Column="1" Text="›" Style="{StaticResource GlyphAccessory}"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Padding="16,12" StrokeThickness="0" StrokeShape="RoundRectangle 8"
+                        Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                        IsVisible="{Binding Instagram, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                        SemanticProperties.Description="Open Instagram profile">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenInstagramCommand}" />
+                            </Grid.GestureRecognizers>
+                            <Label Text="Instagram" Style="{StaticResource TextSubhead}" />
+                            <Label Grid.Column="1" Text="›" Style="{StaticResource GlyphAccessory}"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        </Grid>
+                    </Border>
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </RefreshView>
+
+</ContentPage>

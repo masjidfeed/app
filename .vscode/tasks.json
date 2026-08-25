@@ -1,0 +1,236 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ─── Infrastructure ────────────────────────────────────────────────────────
+    {
+      "label": "masjid: start-docker",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "options": {
+        "cwd": "${workspaceFolder}/devbox"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+
+    // ─── iOS ───────────────────────────────────────────────────────────────────
+    // Boot the iPhone 17 simulator (UDID 80A8D4F0-…). Idempotent: already-booted
+    // simulators are silently skipped. Opens Simulator.app so you can see the UI.
+    // Run `xcrun simctl list devices` to find other UDIDs.
+    {
+      "label": "masjid: boot-ios-simulator",
+      "type": "shell",
+      "command": "xcrun simctl boot 80A8D4F0-2036-4960-9ABB-579ABB05004B 2>/dev/null; open -a Simulator",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+
+    // Compound: start Docker + boot iOS simulator in parallel, then proceed.
+    {
+      "label": "masjid: prepare-ios",
+      "dependsOn": [
+        "masjid: start-docker",
+        "masjid: boot-ios-simulator"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+
+    // ─── Android ───────────────────────────────────────────────────────────────
+    // Start the masjid_test AVD if no emulator is already running, then wait
+    // until Android has finished booting (sys.boot_completed == 1).
+    {
+      "label": "masjid: start-android-emulator",
+      "type": "shell",
+      "command": "set -e; ADB=\"$HOME/Library/Android/sdk/platform-tools/adb\"; EMU=\"$HOME/Library/Android/sdk/emulator/emulator\"; if ! \"$ADB\" devices | grep -q emulator; then nohup \"$EMU\" -avd masjid_test -no-audio -no-boot-anim -gpu swiftshader_indirect >>/tmp/masjid_emu.log 2>&1 & fi; \"$ADB\" wait-for-device; until [ \"$(\"$ADB\" shell getprop sys.boot_completed 2>/dev/null | tr -d '\\r')\" = \"1\" ]; do sleep 1; done",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+
+    // Compound: start Docker + start Android emulator in parallel, then proceed.
+    {
+      "label": "masjid: prepare-android",
+      "dependsOn": [
+        "masjid: start-docker",
+        "masjid: start-android-emulator"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+
+    // NOTE: these "prepare-*" tasks are NOT used as a debug preLaunchTask. A maui
+    // launch config must let the extension inject its own "maui: Build" task
+    // (which writes the debugger's `program` path); overriding preLaunchTask
+    // breaks the launch with "Error processing launch options at field: program".
+    // Run the matching "prepare-*" task manually (Run Task) before pressing F5.
+
+    // ─── Build / Test ──────────────────────────────────────────────────────────
+    // Default build task (⇧⌘B): build the platform-agnostic Core library with
+    // warnings-as-errors - the same gate CI enforces (QA-01).
+    {
+      "label": "masjid: build-core",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/MasjidApp.Core/MasjidApp.Core.csproj",
+        "-c",
+        "Debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Build the full solution (Core + MAUI app heads for iOS + Android).
+    {
+      "label": "masjid: build-solution",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/MasjidApp.slnx",
+        "-c",
+        "Debug"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Build the MAUI app head for Android.
+    {
+      "label": "masjid: build-android",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/MasjidApp/MasjidApp.csproj",
+        "-c",
+        "Debug",
+        "-f",
+        "net10.0-android"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Build the MAUI app head for iOS.
+    {
+      "label": "masjid: build-ios",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/MasjidApp/MasjidApp.csproj",
+        "-c",
+        "Debug",
+        "-f",
+        "net10.0-ios"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Build the MAUI app head for macOS (Mac Catalyst, TC-08).
+    {
+      "label": "masjid: build-maccatalyst",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/MasjidApp/MasjidApp.csproj",
+        "-c",
+        "Debug",
+        "-f",
+        "net10.0-maccatalyst"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Run the app on macOS (Mac Catalyst). Requires macOS 12.0+ (Monterey, TC-08).
+    {
+      "label": "masjid: run-maccatalyst",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "-t:Run",
+        "${workspaceFolder}/src/MasjidApp/MasjidApp.csproj",
+        "-c",
+        "Debug",
+        "-f",
+        "net10.0-maccatalyst"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // Run the Core unit + contract tests (default test task).
+    {
+      "label": "masjid: test",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/tests/MasjidApp.Core.Tests/MasjidApp.Core.Tests.csproj",
+        "-c",
+        "Debug"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

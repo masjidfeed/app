@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<!-- iPhone only (UIDeviceFamily 1). iPadOS 26 deprecated UIRequiresFullScreen, so an
+	     iPad-capable app must support all four orientations and be resizable (ITMS-90474).
+	     This app is portrait-only by design, so iPad is out of scope. -->
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+	</array>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>XSAppIconAssets</key>
+	<string>Assets.xcassets/appicon.appiconset</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<!-- BEGIN GENERATED BRANDED ALTERNATE ICONS -->
+			<key>ICOB</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>icob_icon</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>MAPS</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>maps_icon</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<!-- END GENERATED BRANDED ALTERNATE ICONS -->
+		</dict>
+	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.goodsoftware.masjidapp.posts</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>masjidapp</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- NFR-PR-01: permission usage strings explaining rationale (TC-05, App Store required). -->
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to scan a QR code to add a new masjid. You can also enter the URL manually.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Calendar access lets you review and save masjid events to your chosen calendar.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is used only to calculate the Qibla direction. It is never stored or shared.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Prayer time reminders are sent as local notifications so you never miss a prayer. You can adjust or disable them in Settings.</string>
+
+	<!-- D1, FR-WG-04: background refresh of the home-screen widget snapshot. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.goodsoftware.masjidapp.widgetrefresh</string>
+	</array>
+
+	<!-- FR-CM-02: schemes the app probes with canOpenURL before launching the
+	     dialer, mail composer, and maps app. Without these iOS denies the query. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>telprompt</string>
+		<string>mailto</string>
+		<string>message</string>
+		<string>maps</string>
+		<string>comgooglemaps</string>
+		<string>http</string>
+		<string>https</string>
+	</array>
+
+	<!-- App uses only standard HTTPS: exempt from export compliance. Declaring this
+	     avoids the per-build export questionnaire in App Store Connect. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>

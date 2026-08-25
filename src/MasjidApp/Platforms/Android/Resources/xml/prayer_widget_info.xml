@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TC-04, FR-WG-04: AppWidget provider metadata.
+     updatePeriodMillis = 1 800 000 ms = 30 minutes (OS may throttle in practice).
+     The MAUI app also broadcasts ACTION_APPWIDGET_UPDATE on prayer-data refresh
+     so the widget stays current even within the OS throttle window (FR-WG-04). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+     android:minWidth="250dp"
+     android:minHeight="250dp"
+     android:minResizeWidth="250dp"
+     android:minResizeHeight="250dp"
+     android:targetCellWidth="4"
+     android:targetCellHeight="4"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_prayer_times"
+     android:resizeMode="none"
+    android:widgetCategory="home_screen" />

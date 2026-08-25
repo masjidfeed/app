@@ -1,0 +1,10 @@
+Version: 1
+Organizations:
+  - Id: icob
+    Name: Islamic Center of Bothell
+    Website: https://bothellmosque.org
+    Icon: icob.png
+  - Id: maps
+    Name: MAPS
+    Website: https://mapsredmond.org
+    Icon: maps.png

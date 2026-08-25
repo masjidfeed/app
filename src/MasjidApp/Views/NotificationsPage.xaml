@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.NotificationsPage"
+    x:Name="NotificationsPageRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:MasjidApp.Converters"
+    xmlns:notifications="clr-namespace:MasjidApp.Notifications"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:NotificationsViewModel"
+    Title="Notifications"
+    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
+
+    <ContentPage.Resources>
+        <converters:NotificationTypeIconConverter x:Key="NotificationTypeIconConverter" />
+    </ContentPage.Resources>
+
+    <Grid Padding="16" RowDefinitions="*,Auto" RowSpacing="12">
+        <CollectionView
+            Grid.Row="0"
+            ItemsSource="{Binding Notifications}"
+            SelectionMode="None"
+            EmptyView="No notifications yet">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="notifications:NotificationInboxItem">
+                    <SwipeView
+                        BackgroundColor="White"
+                        SwipeStarted="OnNotificationSwipeStarted"
+                        SwipeEnded="OnNotificationSwipeEnded">
+                        <SwipeView.RightItems>
+                            <SwipeItems Mode="Reveal">
+                                <SwipeItemView
+                                    CommandParameter="{Binding .}"
+                                    Invoked="OnDeleteInvoked">
+                                    <Grid
+                                        WidthRequest="72"
+                                        BackgroundColor="#D32F2F">
+                                        <VerticalStackLayout
+                                            Spacing="4"
+                                            HorizontalOptions="Center"
+                                            VerticalOptions="Center">
+                                            <Image
+                                                Source="notification_trash.png"
+                                                WidthRequest="18"
+                                                HeightRequest="18"
+                                                HorizontalOptions="Center" />
+                                            <Label
+                                                Text="Delete"
+                                                FontSize="11"
+                                                TextColor="White"
+                                                HorizontalTextAlignment="Center" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </SwipeItemView>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+
+                        <Grid
+                            RowDefinitions="Auto,1"
+                            BackgroundColor="White">
+                            <Grid
+                                Grid.Row="0"
+                                Padding="14"
+                                ColumnDefinitions="40,*"
+                                ColumnSpacing="12"
+                                BackgroundColor="White">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        CommandParameter="{Binding .}"
+                                        Tapped="OnNotificationTapped" />
+                                </Grid.GestureRecognizers>
+                                <Border
+                                    Grid.Column="0"
+                                    WidthRequest="40"
+                                    HeightRequest="40"
+                                    Padding="0"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                    VerticalOptions="Start">
+                                    <Image
+                                        Source="{Binding Type, Converter={StaticResource NotificationTypeIconConverter}}"
+                                        WidthRequest="20"
+                                        HeightRequest="20"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        AutomationProperties.IsInAccessibleTree="False" />
+                                </Border>
+                                <Border
+                                    Grid.Column="0"
+                                    WidthRequest="8"
+                                    HeightRequest="8"
+                                    Padding="0"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 4"
+                                    BackgroundColor="#D32F2F"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="Start"
+                                    Margin="0,-2,-2,0"
+                                    IsVisible="{Binding IsRead, Converter={StaticResource InvertBoolConverter}}"
+                                    SemanticProperties.Description="Unread notification" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                    <Label Text="{Binding Title}" Style="{StaticResource TextBodyStrong}" />
+                                    <Label
+                                        Text="{Binding Body}"
+                                        Style="{StaticResource TextCaption}"
+                                        MaxLines="3"
+                                        LineBreakMode="TailTruncation"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+                                    <Label
+                                        Text="{Binding ReceivedAt, StringFormat='{0:g}'}"
+                                        Style="{StaticResource TextSmall}"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                            <BoxView
+                                Grid.Row="1"
+                                HeightRequest="1"
+                                Margin="52,0,0,0"
+                                Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                        </Grid>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button
+            Grid.Row="1"
+            Margin="0,8"
+            Text="Clear all"
+            Command="{Binding ClearAllCommand}"
+            IsVisible="{Binding HasNotifications}"
+            HorizontalOptions="Fill"
+            Padding="16,8"
+            CornerRadius="22"
+            BackgroundColor="Transparent"
+            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+            BorderWidth="1"
+            TextColor="#D32F2F"
+            SemanticProperties.Description="Clear all notifications" />
+    </Grid>
+</ContentPage>

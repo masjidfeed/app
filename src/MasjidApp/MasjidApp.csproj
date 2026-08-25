@@ -1,0 +1,220 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- TC-01/TC-02/TC-08: iOS, Android, and macOS (Mac Catalyst). -->
+		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<!-- The Apple targets need macOS tooling, and restoring them on a Linux CI runner
+		     fails with NETSDK1178 before the Android build starts. -->
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('osx'))">net10.0-android</TargetFrameworks>
+
+		<OutputType>Exe</OutputType>
+		<RootNamespace>MasjidApp</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!-- Enable XAML source generation for faster build times and improved performance.
+		     This generates C# code from XAML at compile time instead of runtime inflation.
+		     To disable, remove this line.
+		     For individual files, you can override by setting Inflator metadata:
+		       <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
+		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
+		<MauiXamlInflator>SourceGen</MauiXamlInflator>
+
+		<!-- Display name -->
+		<ApplicationTitle>MasjidFeed</ApplicationTitle>
+
+		<!-- App Identifier -->
+		<ApplicationId>com.goodsoftware.masjidapp</ApplicationId>
+
+		<!-- Versions -->
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>32</ApplicationVersion>
+
+		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
+		<WindowsPackageType>None</WindowsPackageType>
+
+		<!-- TC-01: iOS 15.0+. TC-02: Android 8.0 / API 26+. TC-08: macOS 12.0+ (Mac Catalyst 15.0+). -->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<!-- Launcher aliases can be toggled at runtime for tenant branding. Always run the
+		     stable activity directly so a disabled icon alias cannot break deployment. -->
+		<RunActivity>com.goodsoftware.masjidapp.MainActivity</RunActivity>
+		<!-- Google Maps renders the embedded About preview on Android. Supply this at build
+		     time with -p:GoogleMapsApiKey=... or the GOOGLE_MAPS_API_KEY environment variable;
+		     never commit a real key (NFR-SC-01). The sentinel keeps keyless builds valid while
+		     the app shows its branded address fallback instead of constructing a blank map. -->
+		<GoogleMapsApiKey Condition="'$(GoogleMapsApiKey)' == '' and '$(GOOGLE_MAPS_API_KEY)' != ''">$(GOOGLE_MAPS_API_KEY)</GoogleMapsApiKey>
+		<GoogleMapsApiKey Condition="'$(GoogleMapsApiKey)' == ''">MAPS_API_KEY_NOT_CONFIGURED</GoogleMapsApiKey>
+		<AndroidManifestPlaceholders>$(AndroidManifestPlaceholders);googleMapsApiKey=$(GoogleMapsApiKey)</AndroidManifestPlaceholders>
+		<DefineConstants Condition="'$(GoogleMapsApiKey)' != 'MAPS_API_KEY_NOT_CONFIGURED'">$(DefineConstants);GOOGLE_MAPS_CONFIGURED</DefineConstants>
+		<AndroidStoreUncompressedFileExtensions>so;dll</AndroidStoreUncompressedFileExtensions>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android' And '$(Configuration)' == 'Release'">
+		<AndroidLinkTool>r8</AndroidLinkTool>
+		<AndroidEnableProguard>true</AndroidEnableProguard>
+		<AndroidCreateProguardMappingFile>true</AndroidCreateProguardMappingFile>
+		<AndroidStripNativeLibraries>false</AndroidStripNativeLibraries>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- App Icon -->
+		<MauiIcon Include="Resources\AppIcon\appicon.png" />
+		<MauiImage Include="Resources\AppIcon\appicon.png" Link="setup_logo_dark.png" />
+		<MauiImage Include="Resources\AppIcon\appicon-white.png" Link="setup_logo_light.png" />
+
+		<!-- Splash Screen - plain white (FR-ST-08).
+		     iOS renders it from LaunchScreen.storyboard and Android from
+		     Resources/drawable/maui_splash_screen.xml; no image asset is involved so the
+		     launch screen flows into the in-app branded splash without a colored flash. -->
+		<AndroidResource
+			Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'"
+			Include="Platforms\Android\Resources\mipmap\*_appicon.png" />
+		<!-- Images -->
+		<MauiImage Include="Resources\Images\*" />
+		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
+
+		<!-- Custom Fonts -->
+		<MauiFont Include="Resources\Fonts\*" />
+
+		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<!-- Alternate app icons (FR-ST-xx). iOS only resolves CFBundleAlternateIcons entries
+		     against files at the BUNDLE ROOT, so LogicalName must strip the source folder.
+		     Without it the PNGs ship under Platforms/iOS/AlternateIcons/ and Apple rejects
+		     the build with ITMS-90032 (Invalid Image Path) and ITMS-90890. -->
+		<BundleResource Include="Platforms\iOS\AlternateIcons\*.png"
+		                LogicalName="%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<!-- HTTP client factory for DI-managed HttpClient instances (API-11). -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<!-- OpenTelemetry SDK + OTLP exporter: composes traces/metrics/logs and exports
+		     off-device only with user consent (NFR-OB-01, NFR-PF-01). -->
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+		<PackageReference Include="Plugin.LocalNotification" Version="14.1.1" />
+		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.10.3" />
+		<!-- Native SQLite provider for the offline cache store on iOS + Android (API-08).
+		     3.0.x bundles SQLite >= 3.50.2 to remediate CVE-2025-6965. -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+		<!-- Pinned so we can statically link the iOS native below; provides $(PkgSourceGear_sqlite3). -->
+		<PackageReference Include="SourceGear.sqlite3" Version="3.50.4.5" GeneratePathProperty="true" />
+	</ItemGroup>
+
+	<!-- iOS uses the statically-linked native (below) via the "__Internal" SQLite provider, so the
+	     app explicitly selects it at startup (see MauiProgram). Reference the provider package on iOS. -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<PackageReference Include="SQLitePCLRaw.provider.internal" Version="3.0.3" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' OR $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<PackageReference Include="Plugin.Firebase.AppCheck" Version="4.0.0" />
+		<PackageReference Include="Plugin.Firebase.CloudMessaging" Version="4.0.1" />
+	</ItemGroup>
+
+	<!-- CVE-2025-6965 workaround: SourceGear.sqlite3 3.50.4.5 ships the iOS SQLite native as a
+	     static library (e_sqlite3.a) but its MSBuild targets only auto-link browser-wasm, so on
+	     iOS the lib is never linked and SQLite fails at runtime with
+	     "DllNotFoundException: e_sqlite3". Statically link it ourselves for iOS device + simulator.
+	     MacCatalyst ships a .dylib and Android resolves its native automatically, so neither needs this. -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' And '$(RuntimeIdentifier)' != ''">
+		<NativeReference Include="$(PkgSourceGear_sqlite3)\runtimes\$(RuntimeIdentifier)\native\e_sqlite3.a">
+			<Kind>Static</Kind>
+			<ForceLoad>True</ForceLoad>
+			<SmartLink>False</SmartLink>
+		</NativeReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MasjidApp.Core\MasjidApp.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- TC-05: localization resource file; compile as embedded resource for ResourceManager. -->
+		<EmbeddedResource Update="Resources\Strings\AppResources.resx" />
+	</ItemGroup>
+
+	<!-- TC-04, FR-WG-01/05: iOS WidgetKit extension - App Group entitlement + build/embed of the
+	     native Swift .appex so the home-screen prayer widgets are registered by iOS.
+	     Simulator builds use the ad-hoc CodesignKey below, while device builds require a real
+	     certificate and provisioning profile with the App Group capability. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<CodesignEntitlements Condition="'$(Configuration)' != 'Release' And $(RuntimeIdentifier.StartsWith('iossimulator'))">Platforms/iOS/Entitlements.Simulator.plist</CodesignEntitlements>
+		<CodesignEntitlements Condition="'$(Configuration)' != 'Release' And !$(RuntimeIdentifier.StartsWith('iossimulator'))">Platforms/iOS/Entitlements.plist</CodesignEntitlements>
+		<CodesignEntitlements Condition="'$(Configuration)' == 'Release'">Platforms/iOS/Entitlements.Release.plist</CodesignEntitlements>
+		<_MasjidWidgetReloadBridgeSdk Condition="$(RuntimeIdentifier.StartsWith('iossimulator')) Or '$(RuntimeIdentifier)' == ''">iphonesimulator</_MasjidWidgetReloadBridgeSdk>
+		<_MasjidWidgetReloadBridgeSdk Condition="'$(_MasjidWidgetReloadBridgeSdk)' == ''">iphoneos</_MasjidWidgetReloadBridgeSdk>
+		<_MasjidWidgetReloadBridgeTarget Condition="'$(RuntimeIdentifier)' == 'iossimulator-x64'">x86_64-apple-ios15.0-simulator</_MasjidWidgetReloadBridgeTarget>
+		<_MasjidWidgetReloadBridgeTarget Condition="'$(_MasjidWidgetReloadBridgeTarget)' == '' And '$(RuntimeIdentifier)' != 'ios-arm64'">arm64-apple-ios15.0-simulator</_MasjidWidgetReloadBridgeTarget>
+		<_MasjidWidgetReloadBridgeTarget Condition="'$(_MasjidWidgetReloadBridgeTarget)' == ''">arm64-apple-ios15.0</_MasjidWidgetReloadBridgeTarget>
+		<_MasjidWidgetReloadBridgeDir>$(MSBuildProjectDirectory)/obj/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/native-widget/$(_MasjidWidgetReloadBridgeTarget)</_MasjidWidgetReloadBridgeDir>
+		<_MasjidWidgetReloadBridgeLib>$(_MasjidWidgetReloadBridgeDir)/libMasjidWidgetReloadBridge.a</_MasjidWidgetReloadBridgeLib>
+	</PropertyGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<NativeReference Include="$(_MasjidWidgetReloadBridgeLib)">
+			<Kind>Static</Kind>
+			<ForceLoad>true</ForceLoad>
+			<Frameworks>WidgetKit</Frameworks>
+			<LinkWithSwiftSystemLibraries>true</LinkWithSwiftSystemLibraries>
+		</NativeReference>
+	</ItemGroup>
+
+	<Target Name="_BuildMasjidWidgetReloadBridge"
+	        BeforeTargets="_ExpandNativeReferences"
+	        Inputs="$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/WidgetTimelineReloader.swift"
+	        Outputs="$(_MasjidWidgetReloadBridgeLib)"
+	        Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<MakeDir Directories="$(_MasjidWidgetReloadBridgeDir)" />
+		<Message Importance="high"
+		         Text="Building iOS WidgetKit reload bridge ($(_MasjidWidgetReloadBridgeTarget))..." />
+		<Exec Command="xcrun --sdk $(_MasjidWidgetReloadBridgeSdk) swiftc -target $(_MasjidWidgetReloadBridgeTarget) -emit-library -static -parse-as-library -o &quot;$(_MasjidWidgetReloadBridgeLib)&quot; &quot;$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/WidgetTimelineReloader.swift&quot;" />
+	</Target>
+
+	<!-- iOS simulator / local development: use ad-hoc signing so _DetectSigningIdentity
+	     succeeds and the Mono runtime dylibs are re-signed with a local identity.
+	     Xcode 26 / macOS 26 enforce valid code signatures even in the simulator, but a
+	     full Apple Developer certificate is not required for local simulator runs.
+	     Device builds (RuntimeIdentifier == ios-arm64) still require a real certificate. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' And '$(RuntimeIdentifier)' != 'ios-arm64'">
+		<CodesignKey>-</CodesignKey>
+	</PropertyGroup>
+
+	<Import Project="Platforms/iOS/MasjidWidget/WidgetExtension.targets"
+	        Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'" />
+	<Import Project="Platforms/iOS/NotificationServiceExtension/NotificationServiceExtension.targets"
+	        Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'" />
+
+	<!-- MAUI's simulator signing pass can leave the outer app without the App Group
+	     entitlement even when CodesignEntitlements is set. Re-sign the simulator app
+	     after Build so it can write the same UserDefaults suite the WidgetKit extension
+	     reads. -->
+	<Target Name="_ResignIosSimulatorAppWithAppGroup"
+	        AfterTargets="Build"
+	        BeforeTargets="ComputeMlaunchRunArguments"
+	        Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' And $(RuntimeIdentifier.StartsWith('iossimulator')) And Exists('$(AppBundleDir)')">
+		<PropertyGroup>
+			<_IosSimulatorCodesignKey Condition="'$(CodesignKey)' == ''">-</_IosSimulatorCodesignKey>
+			<_IosSimulatorCodesignKey Condition="'$(_IosSimulatorCodesignKey)' == ''">$(CodesignKey)</_IosSimulatorCodesignKey>
+		</PropertyGroup>
+		<Message Importance="high"
+		         Text="Re-signing iOS simulator app with App Group entitlement for WidgetKit shared data..." />
+		<Exec Command="/usr/bin/codesign --force --timestamp=none --sign &quot;$(_IosSimulatorCodesignKey)&quot; --entitlements &quot;$(MSBuildProjectDirectory)/$(CodesignEntitlements)&quot; &quot;$(AppBundleDir)&quot;" />
+	</Target>
+
+</Project>

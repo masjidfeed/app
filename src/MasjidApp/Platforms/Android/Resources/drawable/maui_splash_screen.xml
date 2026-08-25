@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-screen splash drawable for Maui.SplashTheme.
+    Plain white so there is no colored flash before the in-app branded splash renders.
+-->
+<color xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#FFFFFFFF" />

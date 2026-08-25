@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- TC-04, FR-WG-05: shared App Group so the widget reads the app's prayer snapshot. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.goodsoftware.masjidapp</string>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="MasjidApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:MasjidApp.Views"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    FlyoutBehavior="Disabled"
+    Title="{l:Localize App_Name}"
+    FlowDirection="MatchParent"
+    Shell.BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
+    Shell.ForegroundColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+    Shell.TitleColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+    Shell.NavBarHasShadow="False">
+
+    <!-- FlowDirection="MatchParent" ensures the Shell respects the system's RTL/LTR
+         setting automatically (TC-05, NFR-AC-01).
+         Bottom tab bar: Home · Donate · Prayer · Qibla (Batch F1, API-06 feature flags).
+         Settings is accessed via the header icon button on the Home page. -->
+
+    <TabBar>
+
+        <!-- Home tab - collapsing header + category strip (Batch F1). -->
+        <Tab
+            Title="Home"
+            Icon="tab_home.png"
+            SemanticProperties.Description="Home tab">
+            <ShellContent
+                Route="home"
+                ContentTemplate="{DataTemplate views:HomeShellPage}" />
+        </Tab>
+
+        <!-- Donate tab - hidden when no donation URL or flag disabled (FR-DN-04, API-06).
+             Visibility is managed in AppShell.xaml.cs based on config. -->
+        <Tab
+            x:Name="DonateTab"
+            Title="Donate"
+            Icon="tab_donate.png"
+            SemanticProperties.Description="Donate tab">
+            <ShellContent
+                Route="donations"
+                ContentTemplate="{DataTemplate views:DonationsPage}" />
+        </Tab>
+
+        <!-- Prayer tab - always visible; opens the full Prayer Times page (FR-PT-01). -->
+        <Tab
+            Title="Prayer"
+            Icon="tab_prayer.png"
+            SemanticProperties.Description="Prayer times tab">
+            <ShellContent
+                Route="prayer"
+                ContentTemplate="{DataTemplate views:PrayerTimesPage}" />
+        </Tab>
+
+        <!-- Qibla tab - always visible; opens the Qibla compass page (FR-CM-03). -->
+        <Tab
+            Title="Qibla"
+            Icon="tab_qibla.png"
+            SemanticProperties.Description="Qibla compass tab">
+            <ShellContent
+                Route="qibla"
+                ContentTemplate="{DataTemplate views:QiblaPage}" />
+        </Tab>
+
+    </TabBar>
+
+</Shell>

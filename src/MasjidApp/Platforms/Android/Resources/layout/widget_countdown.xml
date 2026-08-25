@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TC-04, FR-WG-01: 2x2 live next-prayer countdown and iqama time. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_countdown_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="9dp">
+
+    <TextView
+        android:id="@+id/widget_countdown_masjid_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <FrameLayout
+            android:layout_width="240dp"
+            android:layout_height="240dp"
+            android:layout_gravity="center"
+            android:padding="9dp">
+
+            <ProgressBar
+                android:id="@+id/widget_countdown_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:indeterminate="false"
+                android:max="1000"
+                android:progress="1000"
+                android:progressDrawable="@drawable/widget_countdown_progress" />
+
+            <LinearLayout
+                android:id="@+id/widget_countdown_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <Chronometer
+                    android:id="@+id/widget_countdown_timer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_countdown_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="till Iqama"
+                    android:textColor="#C8FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_countdown_prayer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_countdown_iqama"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_countdown_status"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:maxLines="4"
+                android:textAlignment="center"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:visibility="gone" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_countdown_hijri_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_countdown_gregorian_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:maxLines="1"
+            android:textColor="#D1FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

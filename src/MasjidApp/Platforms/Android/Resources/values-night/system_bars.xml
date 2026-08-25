@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="system_status_bar_background">#FF1F1F1F</color>
+    <color name="system_navigation_bar_background">#FF000000</color>
+    <bool name="system_bar_light_appearance">false</bool>
+</resources>

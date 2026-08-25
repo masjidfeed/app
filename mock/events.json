@@ -1,0 +1,39 @@
+[
+  {
+    "postId": 2001,
+    "title": "Weekly Halaqa: Tafsir of Surah Al-Kahf",
+    "description": "<p>Join us every Friday after Maghrib for a study circle exploring the meanings of Surah Al-Kahf.</p>",
+    "details": "https://bothellmosque.org/wp-json/masjid/v1/posts/2001/description",
+    "image": "/images/whatsapp.png",
+    "eventDateTime": "2026-06-12T21:00:00-07:00",
+    "location": "Main Prayer Hall",
+    "category": "classes",
+    "recurrenceRule": "FREQ=WEEKLY;BYDAY=FR",
+    "alert": "This week's halaqa is canceled. The series resumes Friday, August 7.",
+    "alertEndDateTime": "2026-08-01T23:59:59-07:00",
+    "url": "https://bothellmosque.org/weekly-halaqa"
+  },
+  {
+    "postId": 2002,
+    "title": "Community Fundraising Dinner",
+    "description": "<p>Annual fundraiser to support masjid operations and the new community center.</p>",
+    "details": "https://bothellmosque.org/wp-json/masjid/v1/posts/2002/description",
+    "image": "/images/open-house2.jpeg",
+    "eventDateTime": "2026-06-20T18:30:00-07:00",
+    "location": "Community Hall",
+    "category": "fundraisers",
+    "recurrenceRule": null,
+    "url": "https://bothellmosque.org/community-fundraising-dinner"
+  },
+  {
+    "postId": 2003,
+    "title": "Youth Sports Night",
+    "description": "<p>Basketball and games for ages 12-18 in the gym.</p>",
+    "details": "https://bothellmosque.org/wp-json/masjid/v1/posts/2003/description",
+    "eventDateTime": "2026-06-14T19:00:00-07:00",
+    "location": "Gymnasium",
+    "category": "community",
+    "recurrenceRule": "FREQ=WEEKLY;BYDAY=SU;COUNT=8",
+    "url": "https://bothellmosque.org/youth-sports-night"
+  }
+]

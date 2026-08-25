@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.AppearancePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:theming="clr-namespace:MasjidApp.Core.Theming;assembly=MasjidApp.Core"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:AppearanceViewModel"
+    Title="{Binding Title}"
+    Background="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}">
+
+    <Grid Padding="16,24">
+        <Border
+            Padding="0"
+            StrokeThickness="0"
+            StrokeShape="RoundRectangle 8"
+            Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+            VerticalOptions="Start">
+            <VerticalStackLayout Spacing="0">
+                <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="{x:Static theming:ThemePreference.System}" />
+                    </Grid.GestureRecognizers>
+                    <Label Text="Automatic" Style="{StaticResource TextSubhead}" VerticalOptions="Center" />
+                    <Label Grid.Column="1" Text="✓" Style="{StaticResource GlyphSelected}" TextColor="{DynamicResource ActivePrimaryColor}" IsVisible="{Binding IsAutomaticSelected}" />
+                </Grid>
+                <BoxView HeightRequest="1" Margin="16,0,0,0" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="{x:Static theming:ThemePreference.Dark}" />
+                    </Grid.GestureRecognizers>
+                    <Label Text="Dark" Style="{StaticResource TextSubhead}" VerticalOptions="Center" />
+                    <Label Grid.Column="1" Text="✓" Style="{StaticResource GlyphSelected}" TextColor="{DynamicResource ActivePrimaryColor}" IsVisible="{Binding IsDarkSelected}" />
+                </Grid>
+                <BoxView HeightRequest="1" Margin="16,0,0,0" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectThemeCommand}" CommandParameter="{x:Static theming:ThemePreference.Light}" />
+                    </Grid.GestureRecognizers>
+                    <Label Text="Light" Style="{StaticResource TextSubhead}" VerticalOptions="Center" />
+                    <Label Grid.Column="1" Text="✓" Style="{StaticResource GlyphSelected}" TextColor="{DynamicResource ActivePrimaryColor}" IsVisible="{Binding IsLightSelected}" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

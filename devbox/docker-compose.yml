@@ -1,0 +1,102 @@
+# Docker Compose configuration for Masjid App development (DV-01, DV-04).
+#
+# Services:
+#   wordpress  - WordPress + Masjid API plugin (Xdebug + OpenTelemetry enabled)
+#   db         - MySQL database for WordPress
+#   phpmyadmin - Database UI
+#   mailpit    - Catches outbound mail (SMTP -> web UI)
+#   jaeger     - OpenTelemetry trace viewer
+#   mock-api   - Static server exposing SalahAPI / events / announcements / config
+#                seed data so the app can run without a full WordPress setup.
+#
+# Usage (from the devbox/ directory):
+#   docker compose up -d
+#   WordPress  -> http://localhost:8000     phpMyAdmin -> http://localhost:8080
+#   Mock API   -> http://localhost:8090     Mailpit    -> http://localhost:8025
+#   Jaeger UI  -> http://localhost:16686
+#
+# See ../docs/DEVELOPMENT.md for full setup.
+
+services:
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+      XDEBUG_MODE: debug
+      XDEBUG_CONFIG: client_host=host.docker.internal client_port=9003
+      # OpenTelemetry configuration
+      OTEL_PHP_AUTOLOAD_ENABLED: true
+      OTEL_SERVICE_NAME: masjid-api
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+    volumes:
+      # Drop the Masjid API WordPress plugin (and any themes) under ./backend to develop locally.
+      - ../backend/wp-content:/var/www/html/wp-content
+      - ./wp-config.php:/var/www/html/wp-config.php # Persist WordPress salts and config
+      - ./php.ini:/usr/local/etc/php/conf.d/php.ini # Mount custom php.ini for Xdebug
+    depends_on:
+      - db
+      - jaeger
+      - mailpit
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - db
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"    # Web UI
+      - "1025:1025"    # SMTP
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # Masjid-specific: lightweight mock of the Masjid API serving the JSON seed
+  # data in ../mock as static endpoints for offline/contract development (DV-04).
+  mock-api:
+    image: nginx:alpine
+    ports:
+      - "8090:80"
+    volumes:
+      - ../mock:/usr/share/nginx/html:ro
+      - ../mock/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  db_data:

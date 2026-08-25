@@ -1,0 +1,19 @@
+{
+  // C# Dev Kit must load THIS solution so the MAUI extension can resolve a
+  // startup project. Without it, debugging fails with
+  // "Debugging canceled: startup project not found." Pin the .slnx explicitly
+  // (auto-detection can miss the new XML solution format).
+  "dotnet.defaultSolution": "MasjidApp.slnx",
+
+  // The .NET MAUI extension ignores launch.json by default and uses its own
+  // built-in launch flow (which would skip our preLaunchTask). Enable this so the
+  // "iOS - Debug" / "Android - Debug" configurations in launch.json are used.
+  "maui.configuration.useLaunchJsonConfigurations": true,
+
+  // VS Code launched from the Dock/Finder does NOT inherit the shell's
+  // ANDROID_HOME / JAVA_HOME, which makes the extension report
+  // "Android SDK required components need to be installed". Pin the paths so the
+  // environment check passes. (Machine-specific - adjust if your SDK/JDK move.)
+  "maui.configuration.androidSdkPreferredPath": "/Users/stankovski/Library/Android/sdk",
+  "maui.configuration.javaSdkPreferredPath": "/Library/Java/JavaVirtualMachines/microsoft-21.jdk/Contents/Home"
+}

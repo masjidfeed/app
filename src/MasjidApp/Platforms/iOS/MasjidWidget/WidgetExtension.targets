@@ -1,0 +1,106 @@
+<!--
+  TC-04, FR-WG-01/05: builds the native WidgetKit extension (Swift) with xcodebuild and
+  embeds the resulting .appex into the app bundle's PlugIns/ folder so iOS registers the
+  prayer widgets. The extension is signed here with its own App Group entitlement (the .NET
+  "_CodesignAppBundle" pass does not sign a .appex copied in by a custom target), before the
+  outer app bundle is sealed.
+
+  Notes:
+   - Runs only on macOS (IsMacEnabled) where xcodebuild is available.
+   - Simulator builds use ad-hoc signing and need no provisioning. Device/distribution
+     builds additionally require the "group.com.goodsoftware.masjidapp" App Group capability enabled on
+     the App ID and provisioning profile in the Apple Developer portal.
+   - Set EmbedWidgetExtension=false to skip embedding (e.g. for headless/CI managed builds).
+-->
+<Project>
+
+  <PropertyGroup>
+    <_WidgetExtensionDir>$(MSBuildThisFileDirectory)</_WidgetExtensionDir>
+    <_WidgetExtensionProject>$(_WidgetExtensionDir)MasjidWidgetExtension.xcodeproj</_WidgetExtensionProject>
+    <_WidgetExtensionTarget>MasjidWidgetExtension</_WidgetExtensionTarget>
+    <_WidgetExtensionAppexName>MasjidWidgetExtension.appex</_WidgetExtensionAppexName>
+    <EmbedWidgetExtension Condition="'$(EmbedWidgetExtension)' == ''">true</EmbedWidgetExtension>
+  </PropertyGroup>
+
+  <Target Name="_BuildAndEmbedMasjidWidgetExtension"
+          BeforeTargets="_CodesignAppBundle"
+          DependsOnTargets="_GenerateBundleName"
+          Condition="'$(EmbedWidgetExtension)' == 'true' And '$(IsMacEnabled)' == 'true' And '$(_CanOutputAppBundle)' == 'true'">
+
+    <!-- Pick the SDK that matches the app's runtime identifier (simulator vs device). -->
+    <PropertyGroup>
+      <_WidgetSdk Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">iphonesimulator</_WidgetSdk>
+      <_WidgetSdk Condition="'$(_WidgetSdk)' == ''">iphoneos</_WidgetSdk>
+      <_WidgetDestination Condition="'$(_WidgetSdk)' == 'iphonesimulator'">generic/platform=iOS Simulator</_WidgetDestination>
+      <_WidgetDestination Condition="'$(_WidgetDestination)' == ''">generic/platform=iOS</_WidgetDestination>
+      <_WidgetConfiguration Condition="'$(Configuration)' == 'Release'">Release</_WidgetConfiguration>
+      <_WidgetConfiguration Condition="'$(_WidgetConfiguration)' == ''">Debug</_WidgetConfiguration>
+      <_WidgetDerivedData>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)widget-extension</_WidgetDerivedData>
+      <_WidgetProductsDir>$(_WidgetDerivedData)/Build/Products/$(_WidgetConfiguration)-$(_WidgetSdk)</_WidgetProductsDir>
+      <!-- App bundle PlugIns folder (AppBundleDir may not be slash-terminated). -->
+      <_WidgetPlugInsDir>$([MSBuild]::EnsureTrailingSlash('$(AppBundleDir)'))PlugIns/</_WidgetPlugInsDir>
+      <!-- Code signing is handled by the app bundle's _CodesignAppBundle pass.
+           ENABLE_DEBUG_DYLIB=NO yields a self-contained binary (no Xcode preview
+           .debug.dylib) so the embedded extension loads outside Xcode. -->
+      <_WidgetCodeSigningArgs>CODE_SIGNING_ALLOWED=NO ENABLE_DEBUG_DYLIB=NO</_WidgetCodeSigningArgs>
+    </PropertyGroup>
+
+    <Message Importance="high"
+             Text="Building WidgetKit extension '$(_WidgetExtensionTarget)' ($(_WidgetConfiguration)/$(_WidgetSdk))..." />
+
+    <Exec Command="xcodebuild -project &quot;$(_WidgetExtensionProject)&quot; -scheme $(_WidgetExtensionTarget) -configuration $(_WidgetConfiguration) -sdk $(_WidgetSdk) -destination &quot;$(_WidgetDestination)&quot; -derivedDataPath &quot;$(_WidgetDerivedData)&quot; $(_WidgetCodeSigningArgs) build"
+          WorkingDirectory="$(_WidgetExtensionDir)" />
+
+    <!-- Embed the freshly built .appex into the app bundle's PlugIns folder. -->
+    <ItemGroup>
+      <_WidgetAppexFiles Include="$(_WidgetProductsDir)/$(_WidgetExtensionAppexName)/**/*" />
+    </ItemGroup>
+
+    <Error Condition="'@(_WidgetAppexFiles)' == ''"
+           Text="WidgetKit extension build produced no .appex at '$(_WidgetProductsDir)/$(_WidgetExtensionAppexName)'." />
+
+    <Copy SourceFiles="@(_WidgetAppexFiles)"
+          DestinationFiles="@(_WidgetAppexFiles->'$(_WidgetPlugInsDir)$(_WidgetExtensionAppexName)/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+
+    <Message Importance="high"
+             Text="Embedded $(_WidgetExtensionAppexName) into $(_WidgetPlugInsDir)" />
+
+    <!-- Sign the embedded extension with its App Group entitlement. The .NET
+         "_CodesignAppBundle" pass only signs nested bundles it discovers via
+         app-extension references and does NOT sign a .appex copied in by a custom
+         target, so without this step the widget process has no
+         "com.apple.security.application-groups" entitlement and its
+         UserDefaults(suiteName: "group.com.goodsoftware.masjidapp") cannot read the snapshot
+         the app writes - the widget then renders the "open the app" fallback
+         (FR-WG-05). This runs BeforeTargets="_CodesignAppBundle", so the extension
+         is signed before the outer app bundle is sealed (nested-first order).
+         Simulator builds use ad-hoc signing ("-"); device builds use the identity the .NET
+         iOS SDK auto-detected for the outer app bundle (require the App Group capability +
+         provisioning). NOTE: this must be $(_CodeSigningKey) - the SDK's own internal output
+         property populated by the "_DetectSigningIdentity" target - and NOT the user-facing
+         $(CodesignKey) input property, which stays blank unless a project explicitly pins a
+         signing identity. Using $(CodesignKey) here silently no-ops this Exec (its Condition
+         is empty) for auto-provisioned device builds, leaving the appex completely unsigned
+         and failing device install with "No code signature found" for the .appex.
+         _CodesignAppBundle (this target's BeforeTargets) DependsOnTargets _DetectSigningIdentity,
+         so $(_CodeSigningKey) is guaranteed to be resolved by the time this runs. -->
+    <PropertyGroup>
+      <_WidgetAppexSigningKey Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">-</_WidgetAppexSigningKey>
+      <_WidgetAppexSigningKey Condition="'$(_WidgetAppexSigningKey)' == ''">$(_CodeSigningKey)</_WidgetAppexSigningKey>
+      <_WidgetAppexEntitlements>$(_WidgetExtensionDir)MasjidWidgetExtension.entitlements</_WidgetAppexEntitlements>
+    </PropertyGroup>
+
+    <Exec Condition="'$(_WidgetAppexSigningKey)' != '' And '$(IsMacEnabled)' == 'true'"
+          Command="/usr/bin/codesign --force --timestamp=none --sign &quot;$(_WidgetAppexSigningKey)&quot; --entitlements &quot;$(_WidgetAppexEntitlements)&quot; &quot;$([MSBuild]::EnsureTrailingSlash('$(_WidgetPlugInsDir)'))$(_WidgetExtensionAppexName)&quot;" />
+
+    <!-- Fail fast instead of silently shipping an unsigned .appex (which only surfaces later,
+         confusingly, as an install-time "No code signature found" error on device). -->
+    <Error Condition="'$(_WidgetAppexSigningKey)' == '' And '$(IsMacEnabled)' == 'true'"
+           Text="No signing identity resolved for $(_WidgetExtensionAppexName) (RuntimeIdentifier=$(RuntimeIdentifier)). The SDK's _DetectSigningIdentity target did not resolve a code signing identity - ensure a valid Apple Development certificate and provisioning profile (with the group.com.goodsoftware.masjidapp App Group capability) are installed." />
+
+    <Message Importance="high"
+             Text="Signed $(_WidgetExtensionAppexName) with App Group entitlement (key: $(_WidgetAppexSigningKey))." />
+  </Target>
+
+</Project>

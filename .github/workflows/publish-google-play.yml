@@ -1,0 +1,192 @@
+# Builds, signs, verifies, and uploads the Android App Bundle to Google Play.
+# Release logic lives in scripts/publish-google-play.sh; this workflow only recreates
+# its credential environment and invokes it. See docs/PUBLISHING.md for one-time setup.
+
+name: Publish to Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Version code to publish. Leave empty to bump the current one by 1."
+        required: false
+        type: string
+      app_version:
+        description: "Public version name, e.g. 1.1. Leave empty to keep the current one."
+        required: false
+        type: string
+      track:
+        description: "Google Play release track."
+        required: true
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      release_status:
+        description: "Draft requires completion in Play Console; completed starts rollout."
+        required: true
+        type: choice
+        default: draft
+        options:
+          - draft
+          - completed
+      commit_version_bump:
+        description: "Commit the shared Android/iOS version bump back to the branch."
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  FASTLANE_DISABLE_COLORS: "1"
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+
+jobs:
+  publish:
+    name: Build & upload AAB
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_PUBLISH_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install MAUI Android workload
+        run: |
+          set -euo pipefail
+          dotnet workload restore src/MasjidApp/MasjidApp.csproj
+          dotnet workload --info | head -2
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install Fastlane
+        run: gem install fastlane --no-document
+
+      - name: Download publishing credentials
+        run: |
+          set -euo pipefail
+          credentials="$RUNNER_TEMP/google-play-credentials"
+          mkdir -p "$credentials"
+          chmod 700 "$credentials"
+
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name android-upload-keystore-base64 --file "$credentials/keystore.base64"
+          base64 --decode "$credentials/keystore.base64" > "$credentials/masjidapp-upload.keystore"
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name android-upload-keystore-password --file "$credentials/android-signing-password"
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name google-play-service-account-json-base64 --file "$credentials/service-account.base64"
+          base64 --decode "$credentials/service-account.base64" > "$credentials/google-play-service-account.json"
+          az keyvault secret download --vault-name masjidfeed-publish \
+            --name google-maps-api-key --file "$credentials/google-maps-api-key"
+          rm -f "$credentials/keystore.base64" "$credentials/service-account.base64"
+          chmod 600 "$credentials"/*
+
+          echo "ANDROID_KEYSTORE=$credentials/masjidapp-upload.keystore" >> "$GITHUB_ENV"
+          echo "ANDROID_SIGNING_PASSWORD_FILE=$credentials/android-signing-password" >> "$GITHUB_ENV"
+          echo "GOOGLE_PLAY_JSON_KEY=$credentials/google-play-service-account.json" >> "$GITHUB_ENV"
+          echo "GOOGLE_MAPS_API_KEY_FILE=$credentials/google-maps-api-key" >> "$GITHUB_ENV"
+
+      - name: Publish to Google Play
+        id: publish
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
+          APP_VERSION: ${{ inputs.app_version }}
+          GOOGLE_PLAY_TRACK: ${{ inputs.track }}
+          GOOGLE_PLAY_RELEASE_STATUS: ${{ inputs.release_status }}
+          PUBLISHING_KEY_VAULT_NAME: ""
+          PUBLISH_ARTIFACTS_DIR: ${{ runner.temp }}/google-play-artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$PUBLISH_ARTIFACTS_DIR"
+          scripts/publish-google-play.sh 2>&1 |
+            tee "$PUBLISH_ARTIFACTS_DIR/publish-google-play.log"
+
+      - name: Record build metadata
+        if: always()
+        env:
+          ARTIFACTS_DIR: ${{ runner.temp }}/google-play-artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACTS_DIR"
+          {
+            echo "repository=$GITHUB_REPOSITORY"
+            echo "commit=$GITHUB_SHA"
+            echo "workflow_run_id=$GITHUB_RUN_ID"
+            echo "workflow_run_attempt=$GITHUB_RUN_ATTEMPT"
+            echo "track=${{ inputs.track }}"
+            echo "release_status=${{ inputs.release_status }}"
+          } > "$ARTIFACTS_DIR/build-manifest.txt"
+          git status --short > "$ARTIFACTS_DIR/git-status.txt"
+          git diff -- src/MasjidApp/MasjidApp.csproj \
+                       src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist \
+            > "$ARTIFACTS_DIR/version-bump.diff"
+          dotnet --info > "$ARTIFACTS_DIR/dotnet-info.txt"
+          dotnet workload list > "$ARTIFACTS_DIR/dotnet-workloads.txt"
+          java -version > "$ARTIFACTS_DIR/java-version.txt" 2>&1
+
+          (
+            cd "$ARTIFACTS_DIR"
+            find . -type f ! -name CHECKSUMS.sha256 \
+              -exec sha256sum {} \; | sort
+          ) > "$ARTIFACTS_DIR/CHECKSUMS.sha256"
+
+      - name: Upload Android release artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-google-play-${{ github.sha }}-run${{ github.run_attempt }}
+          path: ${{ runner.temp }}/google-play-artifacts
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit version bump
+        if: always() && inputs.commit_version_bump && steps.publish.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git add src/MasjidApp/MasjidApp.csproj \
+                  src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist
+          if git diff --cached --quiet; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          build=$(sed -n 's:.*<ApplicationVersion>\([^<]*\).*:\1:p' \
+                  src/MasjidApp/MasjidApp.csproj | head -1)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(android): bump build number to $build"
+          git pull --rebase --autostash
+          git push
+
+      - name: Clean up credentials
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/google-play-credentials"

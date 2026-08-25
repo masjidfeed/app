@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- TC-04, FR-WG-05: App Group shared container so the WidgetKit extension can read
+	     the prayer snapshot the app writes (NSUserDefaults suite
+	     "group.com.goodsoftware.masjidapp").
+	     The same group id must be enabled on the App ID in the Apple Developer portal for
+	     device/distribution builds. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.goodsoftware.masjidapp</string>
+	</array>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

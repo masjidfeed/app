@@ -1,0 +1,90 @@
+# Continuous Integration for the Masjid App (DV-05, QA-01).
+# Builds MasjidApp.Core and the test suite on ubuntu-latest (no MAUI workload
+# needed for the platform-agnostic library).  The MAUI app head (iOS/Android)
+# is excluded here because it requires the MAUI workload and platform SDK.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  CORE_CSPROJ: src/MasjidApp.Core/MasjidApp.Core.csproj
+  TESTS_CSPROJ: tests/MasjidApp.Core.Tests/MasjidApp.Core.Tests.csproj
+
+jobs:
+  build-test:
+    name: Build, lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pin the SDK from global.json, exactly like the publish workflow.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # global.json also pins workloadVersion, and the SDK resolver enforces that pin on
+      # every restore - even for these workload-free projects - failing with MSB4242
+      # "Workload version ... was not found". Install the pinned workload set, mirroring
+      # publish-appstore.yml. Scoped to the test project (which references Core) rather
+      # than the MAUI app, because iOS/MacCatalyst workloads aren't available on Linux.
+      - name: Install pinned workload set
+        run: |
+          set -euo pipefail
+          dotnet workload restore "$TESTS_CSPROJ"
+          dotnet workload --info | head -2
+
+      # Restore only the projects that don't require the MAUI workload.
+      - name: Restore
+        run: |
+          dotnet restore "$CORE_CSPROJ"
+          dotnet restore "$TESTS_CSPROJ"
+
+      # QA-01: formatting + analyzer enforcement (fails on any violation).
+      - name: Format check
+        run: |
+          dotnet format "$CORE_CSPROJ" --verify-no-changes --severity warn
+          dotnet format "$TESTS_CSPROJ" --verify-no-changes --severity warn
+
+      # Warnings-as-errors build (see Directory.Build.props) - QA-01.
+      - name: Build Core
+        run: dotnet build "$CORE_CSPROJ" --configuration Release --no-restore
+
+      - name: Build Tests
+        run: dotnet build "$TESTS_CSPROJ" --configuration Release --no-restore
+
+      # QA-02, QA-03, QA-06: unit + contract tests for core logic.
+      - name: Run Tests
+        run: >
+          dotnet test "$TESTS_CSPROJ" --configuration Release --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/TestResults/**/*"
+          if-no-files-found: ignore
+
+  validate-mock-data:
+    name: Validate seed data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Ensures the local-dev seed JSON stays well-formed (DV-04).
+      - name: Validate JSON
+        run: |
+          set -e
+          for f in mock/*.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" && echo "✓ $f" || { echo "✗ $f is invalid JSON"; exit 1; }
+          done

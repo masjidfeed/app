@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- NETSDK1206: SQLitePCLRaw uses version-specific RIDs; acceptable for a library project. -->
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Resilient HTTP pipeline: exponential-backoff retry + per-attempt timeout (API-11). -->
+    <PackageReference Include="HtmlSanitizer" Version="9.1.968-beta" />
+    <PackageReference Include="Ical.Net" Version="4.2.0" />
+    <!-- OpenTelemetry-native instrumentation: traces/metrics via System.Diagnostics and
+         structured logging via ILogger. The core stays SDK-agnostic; the app head
+         composes the OpenTelemetry SDK + exporters around these primitives (NFR-OB-01). -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Polly" Version="8.5.0" />
+    <PackageReference Include="SalahAPI" Version="1.1.0" />
+    <!-- Cross-platform async SQLite for the offline cache store (API-08, NFR-OF-03).
+         1.11.x moves to SQLitePCLRaw 3.0.x and drops bundle_green, which is required to
+         purge the vulnerable native lib.e_sqlite3 from the graph (CVE-2025-6965). -->
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.272-beta" />
+    <!-- Provide the 3.0.x native SQLite (SourceGear.sqlite3 >= 3.50.x, patched). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+  </ItemGroup>
+
+</Project>

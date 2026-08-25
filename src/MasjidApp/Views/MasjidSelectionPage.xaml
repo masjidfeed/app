@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.MasjidSelectionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:models="clr-namespace:MasjidApp.Core.Models;assembly=MasjidApp.Core"
+    x:DataType="vm:MasjidSelectionViewModel"
+    Title="Masjid">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem
+            Text="Add"
+            Command="{Binding AddMasjidCommand}"
+            AutomationId="AddMasjidButton"
+            SemanticProperties.Description="Add a new masjid" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- Masjid list -->
+        <CollectionView
+            Grid.Row="0"
+            ItemsSource="{Binding Masjids}"
+            SelectionMode="None"
+            AutomationId="MasjidList">
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout
+                    VerticalOptions="Center"
+                    HorizontalOptions="Center"
+                    Spacing="12"
+                    Padding="32">
+                    <Label
+                        Text="No masjids added yet."
+                        HorizontalOptions="Center"
+                        Style="{StaticResource TextSubhead}"
+                        SemanticProperties.HeadingLevel="Level2" />
+                    <Label
+                        Text="Tap Add to get started."
+                        HorizontalOptions="Center"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:MasjidStoredEntry">
+                    <Grid
+                        Padding="16,12"
+                        ColumnDefinitions="*,Auto,Auto">
+
+                        <!-- Name -->
+                        <Label
+                            Grid.Column="0"
+                            Text="{Binding Name}"
+                            VerticalOptions="Center"
+                            Style="{StaticResource TextSubhead}"
+                            SemanticProperties.Description="{Binding Name, StringFormat='Masjid: {0}'}" />
+
+                        <!-- Select -->
+                        <Button
+                            Grid.Column="1"
+                            Text="Select"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MasjidSelectionViewModel}}, Path=SelectMasjidCommand}"
+                            CommandParameter="{Binding .}"
+                            Margin="8,0,4,0"
+                            SemanticProperties.Description="{Binding Name, StringFormat='Select {0}'}" />
+
+                        <!-- Remove -->
+                        <Button
+                            Grid.Column="2"
+                            Text="Remove"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MasjidSelectionViewModel}}, Path=RemoveMasjidCommand}"
+                            CommandParameter="{Binding .}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                            SemanticProperties.Description="{Binding Name, StringFormat='Remove {0}'}" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Active masjid footer -->
+        <Border
+            Grid.Row="1"
+            Padding="16,10"
+            IsVisible="{Binding ActiveMasjid, Converter={StaticResource IsNotNullConverter}}">
+            <Label
+                Text="{Binding ActiveMasjid.Name, StringFormat='Active: {0}'}"
+                Style="{StaticResource TextBodyStrong}"
+                SemanticProperties.HeadingLevel="Level3" />
+        </Border>
+    </Grid>
+</ContentPage>

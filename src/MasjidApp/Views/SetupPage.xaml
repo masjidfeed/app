@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.SetupPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    x:DataType="vm:AddMasjidViewModel"
+    NavigationPage.HasNavigationBar="False"
+    Shell.NavBarIsVisible="False"
+    Title="">
+
+    <!-- F2: Full-screen first-run setup page - no Tab/NavBar chrome, cannot be bypassed.
+         Shown only when IMasjidContext.ActiveEntry is null (API-10, FR-ST-01). -->
+
+    <ScrollView x:Name="SetupScrollView">
+        <VerticalStackLayout Padding="32,56,32,32" Spacing="16">
+
+            <!-- Welcome branding -->
+            <Border
+                HeightRequest="96"
+                WidthRequest="96"
+                HorizontalOptions="Center"
+                Margin="0,0,0,8"
+                Padding="0"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 18">
+                <Image
+                    Source="{AppThemeBinding Light=setup_logo_light.png, Dark=setup_logo_dark.png}"
+                    Aspect="AspectFill"
+                    SemanticProperties.Description="MasjidFeed logo">
+                    <Image.Clip>
+                        <RoundRectangleGeometry
+                            CornerRadius="18"
+                            Rect="0,0,96,96" />
+                    </Image.Clip>
+                </Image>
+            </Border>
+
+            <Label
+                Text="{l:Localize Setup_Welcome_Title}"
+                Style="{StaticResource TextHeadline}"
+                HorizontalTextAlignment="Center"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Label
+                Text="{l:Localize Setup_Welcome_Subtitle}"
+                Style="{StaticResource TextBody}"
+                HorizontalTextAlignment="Center"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                Margin="0,0,0,16" />
+
+            <!-- URL section heading -->
+            <Label
+                Text="{l:Localize AddMasjid_UrlLabel}"
+                Style="{StaticResource TextSubhead}"
+                SemanticProperties.HeadingLevel="Level2" />
+
+            <Label
+                Text="{l:Localize AddMasjid_UrlSubtitle}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <!-- URL entry -->
+            <Entry
+                Placeholder="{l:Localize AddMasjid_UrlHint}"
+                Text="{Binding Url}"
+                Keyboard="Url"
+                IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
+                AutomationId="MasjidUrlEntry"
+                SemanticProperties.Description="Masjid URL input" />
+
+            <!-- Connect button -->
+            <Button
+                Text="{l:Localize AddMasjid_Connect_Button}"
+                Command="{Binding AddByUrlCommand}"
+                IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
+                AutomationId="ConnectButton"
+                SemanticProperties.Description="Connect to this masjid URL" />
+
+            <!-- Busy indicator -->
+            <ActivityIndicator
+                IsRunning="{Binding IsValidating}"
+                IsVisible="{Binding IsValidating}"
+                HorizontalOptions="Center" />
+
+            <!-- Status feedback -->
+            <Label
+                Text="{Binding StatusMessage}"
+                IsVisible="{Binding StatusMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                SemanticProperties.Description="{Binding StatusMessage}">
+                <Label.Triggers>
+                    <DataTrigger
+                        TargetType="Label"
+                        Binding="{Binding ShowUnsupportedWebsite}"
+                        Value="True">
+                        <Setter Property="IsVisible" Value="False" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+
+            <VerticalStackLayout
+                x:Name="UnsupportedWebsitePanel"
+                IsVisible="{Binding ShowUnsupportedWebsite}"
+                Spacing="12"
+                Margin="0,8,0,0">
+                <Label
+                    Text="{l:Localize Setup_UnsupportedWebsite_Message}"
+                    Style="{StaticResource TextBody}"
+                    HorizontalTextAlignment="Center"
+                    SemanticProperties.Description="{l:Localize Setup_UnsupportedWebsite_Message}" />
+                <Button
+                    Text="{l:Localize Setup_UnsupportedWebsite_LearnMore_Button}"
+                    Clicked="OnLearnMoreClicked"
+                    AutomationId="LearnMoreButton"
+                    SemanticProperties.Description="{l:Localize Setup_UnsupportedWebsite_LearnMore_Button}" />
+            </VerticalStackLayout>
+
+            <BoxView
+                HeightRequest="1"
+                Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                Margin="0,8" />
+
+            <Label
+                Text="{l:Localize AddMasjid_ScanQr_Title}"
+                Style="{StaticResource TextSubheadStrong}"
+                SemanticProperties.HeadingLevel="Level2" />
+
+            <Label
+                Text="{l:Localize AddMasjid_ScanQr_Subtitle}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <Button
+                x:Name="ScanQrButton"
+                Text="{l:Localize AddMasjid_ScanQr_Button}"
+                Clicked="OnScanQrClicked"
+                AutomationId="ScanQrButton"
+                SemanticProperties.Description="Open camera to scan QR code" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

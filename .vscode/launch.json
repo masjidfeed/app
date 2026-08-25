@@ -1,0 +1,66 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // The .NET MAUI extension (ms-dotnettools.maui) chooses the device from the
+    // status-bar Debug Target picker ({ } symbol), or via the command palette:
+    //   ".NET MAUI: Pick iOS Device"  /  ".NET MAUI: Pick Android Device".
+    //
+    // DO NOT set a preLaunchTask. A maui config with no preLaunchTask makes the
+    // adapter auto-inject its own "maui: Build" task, which builds + deploys the
+    // app AND writes the build-output file the debugger reads for the `program`
+    // path. Overriding preLaunchTask with a task that does NOT run that build
+    // (e.g. one that only starts Docker/emulator) leaves the build-output file
+    // empty and the launch fails with
+    //   "Error processing launch options at field: program".
+    // Start the dev backend + emulator/simulator separately BEFORE pressing F5,
+    // e.g. Run Task → "masjid: prepare-ios" / "masjid: prepare-android".
+    //
+    // The { } Debug Target picker drives the active platform/TFM that the build
+    // uses, so set it to the matching real device first (Android emulator for the
+    // Android config, an iOS simulator for the iOS config; not "build only").
+    //
+    // IMPORTANT: do NOT set a "project" here. The extension resolves the debug
+    // config in resolveDebugConfiguration() - which runs BEFORE VS Code expands
+    // ${workspaceFolder} - and then matches it with an exact string compare
+    // (allProjects.find(p => p.path === config.project)). A "${workspaceFolder}"
+    // path therefore never matches the absolute project path and the adapter
+    // fails with "Debugging canceled: startup project not found.". Omitting
+    // "project" makes it fall back to C# Dev Kit's persisted startup project
+    // (set via Solution Explorer → "Set as Startup Project"), which works.
+    // Pick the matching emulator/simulator as the debug target before running.
+
+    // ─── iOS ───────────────────────────────────────────────────────────────────
+    // Set MasjidApp as the startup project and select an iOS simulator as the
+    // debug target, then run this config.
+    {
+      "name": "iOS - Debug",
+      "type": "maui",
+      "request": "launch",
+      "configuration": "Debug",
+      "targetFramework": "net10.0-ios"
+    },
+
+    // ─── Android ───────────────────────────────────────────────────────────────
+    // Set MasjidApp as the startup project and select an Android emulator as the
+    // debug target, then run this config.
+    {
+      "name": "Android - Debug",
+      "type": "maui",
+      "request": "launch",
+      "configuration": "Debug",
+      "targetFramework": "net10.0-android"
+    },
+
+
+    // ─── Mac Catalyst ───────────────────────────────────────────────────────────────
+    // Set MasjidApp as the startup project and select a Mac Catalyst simulator as the
+    // debug target, then run this config.
+    {
+      "name": "Mac - Debug",
+      "type": "maui",
+      "request": "launch",
+      "configuration": "Debug",
+      "targetFramework": "net10.0-maccatalyst"
+    }
+  ]
+}

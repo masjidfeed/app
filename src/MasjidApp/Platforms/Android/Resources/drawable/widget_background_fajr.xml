@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FR-WG-06: Fajr/dawn widget background with high contrast for white text. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <gradient
+        android:angle="270"
+        android:startColor="#E60E1840"
+        android:centerColor="#E635285C"
+        android:endColor="#E68B3D1A" />
+</shape>

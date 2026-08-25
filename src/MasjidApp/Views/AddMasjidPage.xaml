@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.AddMasjidPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:AddMasjidViewModel"
+    Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+
+            <Label
+                Text="Enter the masjid's website URL"
+                Style="{StaticResource TextSubhead}"
+                SemanticProperties.HeadingLevel="Level2" />
+
+            <Label
+                Text="Paste the URL of the WordPress site running the Masjid API plugin, or scan the QR code provided by the masjid administrator."
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <!-- URL entry -->
+            <Entry
+                Placeholder="https://your-masjid.org"
+                Text="{Binding Url}"
+                Keyboard="Url"
+                IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
+                AutomationId="MasjidUrlEntry"
+                SemanticProperties.Description="Masjid URL input" />
+
+            <!-- Add by URL button -->
+            <Button
+                Text="Connect"
+                Command="{Binding AddByUrlCommand}"
+                IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
+                AutomationId="ConnectButton"
+                SemanticProperties.Description="Connect to this masjid URL" />
+
+            <!-- Busy indicator -->
+            <ActivityIndicator
+                IsRunning="{Binding IsValidating}"
+                IsVisible="{Binding IsValidating}"
+                HorizontalOptions="Center" />
+
+            <!-- Status feedback -->
+            <Label
+                Text="{Binding StatusMessage}"
+                IsVisible="{Binding StatusMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                SemanticProperties.Description="{Binding StatusMessage}" />
+
+            <BoxView
+                HeightRequest="1"
+                Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                Margin="0,8" />
+
+            <Label
+                Text="Scan QR Code"
+                Style="{StaticResource TextSubheadStrong}"
+                SemanticProperties.HeadingLevel="Level2" />
+
+            <Label
+                Text="Point your camera at the masjid's QR code to fill in the URL automatically."
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <!-- Placeholder for QR scanner (wired up in code-behind when camera permission granted) -->
+            <Button
+                x:Name="ScanQrButton"
+                Text="Scan QR Code"
+                Clicked="OnScanQrClicked"
+                AutomationId="ScanQrButton"
+                SemanticProperties.Description="Open camera to scan QR code" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

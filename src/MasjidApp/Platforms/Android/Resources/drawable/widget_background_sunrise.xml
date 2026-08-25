@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FR-WG-06: Sunrise widget background with high contrast for white text. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <gradient
+        android:angle="270"
+        android:startColor="#E61B4D8E"
+        android:centerColor="#E6C47B1A"
+        android:endColor="#E6E8AE24" />
+</shape>

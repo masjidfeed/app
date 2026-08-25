@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Masjid App localization resources - English (v1).
+    Structured for RTL-ready v2 additions (TC-05).
+    Keys use PascalCase dot-separated namespacing: {Screen}.{Element}.
+
+    To add a new language (e.g. Arabic), create AppResources.ar.resx in this folder.
+  -->
+
+  <!-- ── App-wide ────────────────────────────────────────────────────────────── -->
+  <data name="App_Name" xml:space="preserve">
+    <value>MasjidFeed</value>
+  </data>
+  <data name="App_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="App_Error_Generic" xml:space="preserve">
+    <value>Something went wrong. Please try again.</value>
+  </data>
+  <data name="App_Offline_Banner" xml:space="preserve">
+    <value>You are offline - showing cached content.</value>
+  </data>
+  <data name="App_LastUpdated" xml:space="preserve">
+    <value>Last updated: {0}</value>
+  </data>
+  <data name="App_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="App_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="App_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="App_Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+
+  <!-- ── Navigation / Tabs ─────────────────────────────────────────────────── -->
+  <data name="Nav_PrayerTimes" xml:space="preserve">
+    <value>Prayer Times</value>
+  </data>
+  <data name="Nav_Events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Nav_Announcements" xml:space="preserve">
+    <value>Announcements</value>
+  </data>
+  <data name="Nav_Qibla" xml:space="preserve">
+    <value>Qibla</value>
+  </data>
+  <data name="Nav_Donations" xml:space="preserve">
+    <value>Donate</value>
+  </data>
+  <data name="Nav_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+
+  <!-- ── First-run Setup (Batch F2) ──────────────────────────────────────── -->
+  <data name="Setup_Welcome_Title" xml:space="preserve">
+    <value>Welcome to MasjidFeed</value>
+  </data>
+  <data name="Setup_Welcome_Subtitle" xml:space="preserve">
+    <value>Connect to your masjid to get prayer times, events, and announcements.</value>
+  </data>
+  <data name="Setup_UnsupportedWebsite_Message" xml:space="preserve">
+    <value>Unfortunately, your masjid website doesn't yet support the mobile experience.</value>
+  </data>
+  <data name="Setup_UnsupportedWebsite_LearnMore_Button" xml:space="preserve">
+    <value>To learn more</value>
+  </data>
+
+  <!-- ── Masjid Selection (Batch 02) ──────────────────────────────────────── -->
+  <data name="MasjidSelection_Title" xml:space="preserve">
+    <value>Masjid</value>
+  </data>
+  <data name="MasjidSelection_EmptyTitle" xml:space="preserve">
+    <value>No masjids added yet.</value>
+  </data>
+  <data name="MasjidSelection_EmptySubtitle" xml:space="preserve">
+    <value>Tap Add to get started.</value>
+  </data>
+  <data name="MasjidSelection_Active_Label" xml:space="preserve">
+    <value>Active: {0}</value>
+  </data>
+  <data name="MasjidSelection_Select_Button" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="MasjidSelection_Remove_Button" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="MasjidSelection_Add_Button" xml:space="preserve">
+    <value>Add</value>
+  </data>
+
+  <!-- ── Add Masjid (Batch 02) ──────────────────────────────────────────────── -->
+  <data name="AddMasjid_Title" xml:space="preserve">
+    <value>Add Masjid</value>
+  </data>
+  <data name="AddMasjid_UrlLabel" xml:space="preserve">
+    <value>Enter the masjid's website URL</value>
+  </data>
+  <data name="AddMasjid_UrlHint" xml:space="preserve">
+    <value>https://your-masjid.org</value>
+  </data>
+  <data name="AddMasjid_UrlSubtitle" xml:space="preserve">
+    <value>Paste the URL of the WordPress site running the Masjid API plugin, or scan the QR code provided by the masjid administrator.</value>
+  </data>
+  <data name="AddMasjid_Connect_Button" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="AddMasjid_ScanQr_Button" xml:space="preserve">
+    <value>Scan QR Code</value>
+  </data>
+  <data name="AddMasjid_ScanQr_Title" xml:space="preserve">
+    <value>Scan QR Code</value>
+  </data>
+  <data name="AddMasjid_ScanQr_Subtitle" xml:space="preserve">
+    <value>Point your camera at the masjid's QR code to fill in the URL automatically.</value>
+  </data>
+  <data name="AddMasjid_Connecting" xml:space="preserve">
+    <value>Connecting…</value>
+  </data>
+
+  <!-- ── Announcements (Batch B3) ──────────────────────────────────────────── -->
+  <data name="Announcements_Title" xml:space="preserve">
+    <value>Announcements</value>
+  </data>
+  <data name="Announcements_Empty" xml:space="preserve">
+    <value>No announcements yet.</value>
+  </data>
+  <data name="PostActions_Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="PostActions_Share" xml:space="preserve">
+    <value>Share</value>
+  </data>
+
+  <!-- ── Events (Batch B2) ─────────────────────────────────────────────────── -->
+  <data name="Events_Title" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Events_Empty" xml:space="preserve">
+    <value>No upcoming events.</value>
+  </data>
+  <data name="Events_Recurring_Label" xml:space="preserve">
+    <value>Recurring</value>
+  </data>
+  <data name="Events_Alert_Label" xml:space="preserve">
+    <value>Event update</value>
+  </data>
+
+  <!-- ── Prayer Times (Batch A4) ───────────────────────────────────────────── -->
+  <data name="PrayerTimes_Title" xml:space="preserve">
+    <value>Prayer Times</value>
+  </data>
+  <data name="Prayer_Fajr" xml:space="preserve">
+    <value>Fajr</value>
+  </data>
+  <data name="Prayer_Sunrise" xml:space="preserve">
+    <value>Sunrise</value>
+  </data>
+  <data name="Prayer_Dhuhr" xml:space="preserve">
+    <value>Dhuhr</value>
+  </data>
+  <data name="Prayer_Asr" xml:space="preserve">
+    <value>Asr</value>
+  </data>
+  <data name="Prayer_Maghrib" xml:space="preserve">
+    <value>Maghrib</value>
+  </data>
+  <data name="Prayer_Isha" xml:space="preserve">
+    <value>Isha</value>
+  </data>
+  <data name="Prayer_Jumuah" xml:space="preserve">
+    <value>Jumuah</value>
+  </data>
+  <data name="Prayer_Iqama" xml:space="preserve">
+    <value>Iqama</value>
+  </data>
+  <data name="PrayerTimes_NextPrayer" xml:space="preserve">
+    <value>Next: {0}</value>
+  </data>
+  <data name="PrayerTimes_CountdownLabel" xml:space="preserve">
+    <value>in {0}</value>
+  </data>
+
+  <!-- ── Settings (Batch E1) ───────────────────────────────────────────────── -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_Theme_Section" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings_Theme_System" xml:space="preserve">
+    <value>System default</value>
+  </data>
+  <data name="Settings_Theme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings_Theme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings_TimeFormat_Section" xml:space="preserve">
+    <value>Time Format</value>
+  </data>
+  <data name="Settings_TimeFormat_12h" xml:space="preserve">
+    <value>12-hour</value>
+  </data>
+  <data name="Settings_TimeFormat_24h" xml:space="preserve">
+    <value>24-hour</value>
+  </data>
+  <data name="Settings_Notifications_Section" xml:space="preserve">
+    <value>Prayer Reminders</value>
+  </data>
+  <data name="Settings_PushNotifications_Label" xml:space="preserve">
+    <value>Announcements</value>
+  </data>
+  <data name="Settings_PushNotifications_Description" xml:space="preserve">
+    <value>Notify me of important updates</value>
+  </data>
+  <data name="Settings_PushNotifications_Status_Denied" xml:space="preserve">
+    <value>Push notifications are disabled in system settings.</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_Label" xml:space="preserve">
+    <value>Notify before iqama</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_Title" xml:space="preserve">
+    <value>Lead time</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_AtIqama" xml:space="preserve">
+    <value>At iqama time</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_5" xml:space="preserve">
+    <value>5 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_10" xml:space="preserve">
+    <value>10 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_15" xml:space="preserve">
+    <value>15 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_20" xml:space="preserve">
+    <value>20 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_30" xml:space="preserve">
+    <value>30 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_45" xml:space="preserve">
+    <value>45 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_LeadTime_60" xml:space="preserve">
+    <value>60 minutes before</value>
+  </data>
+  <data name="Settings_PrayerReminder_Status_Unavailable" xml:space="preserve">
+    <value>Prayer times are unavailable. Reminders will retry when the schedule refreshes.</value>
+  </data>
+  <data name="Settings_PrayerReminder_Status_Denied" xml:space="preserve">
+    <value>Notifications are disabled. Enable them in system settings to receive reminders.</value>
+  </data>
+  <data name="Settings_PrayerReminder_Status_Failed" xml:space="preserve">
+    <value>Could not update reminders. Please try again.</value>
+  </data>
+  <data name="Notification_PrayerReminder_Title" xml:space="preserve">
+    <value>Get ready for {0}</value>
+    <comment>{0} prayer name, e.g. "Fajr".</comment>
+  </data>
+  <data name="Notification_PrayerReminder_Body_Lead" xml:space="preserve">
+    <value>{0} {1} in {2} ({3})</value>
+    <comment>{0} prayer name, {1} iqama/athan label, {2} lead time, {3} prayer time.</comment>
+  </data>
+  <data name="Notification_PrayerReminder_Body_AtTime" xml:space="preserve">
+    <value>{0} {1} at {2}</value>
+    <comment>{0} prayer name, {1} iqama/athan label, {2} prayer time.</comment>
+  </data>
+  <data name="Notification_PrayerReminder_Label_Iqama" xml:space="preserve">
+    <value>iqama</value>
+  </data>
+  <data name="Notification_PrayerReminder_Label_Athan" xml:space="preserve">
+    <value>athan</value>
+  </data>
+  <data name="Notification_Duration_Minute" xml:space="preserve">
+    <value>{0} minute</value>
+  </data>
+  <data name="Notification_Duration_Minutes" xml:space="preserve">
+    <value>{0} minutes</value>
+  </data>
+  <data name="Notification_Duration_Hour" xml:space="preserve">
+    <value>{0} hour</value>
+  </data>
+  <data name="Notification_Duration_Hours" xml:space="preserve">
+    <value>{0} hours</value>
+  </data>
+  <data name="Settings_Masjid_Section" xml:space="preserve">
+    <value>Masjid</value>
+  </data>
+  <data name="Settings_ChangeMasjid" xml:space="preserve">
+    <value>Change Masjid</value>
+  </data>
+  <data name="Settings_About_Section" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Settings_PrivacyPolicy" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="Settings_Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+
+  <!-- ── Contact (Batch B4) ───────────────────────────────────────────────── -->
+  <data name="Nav_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="Contact_Title" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="Contact_Address_Label" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Contact_Phone_Label" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Contact_Email_Label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Contact_Website_Label" xml:space="preserve">
+    <value>Website</value>
+  </data>
+  <data name="Contact_OpenMap_Button" xml:space="preserve">
+    <value>Map</value>
+  </data>
+  <data name="Contact_Call_Button" xml:space="preserve">
+    <value>Call</value>
+  </data>
+  <data name="Contact_SendEmail_Button" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Contact_OpenWebsite_Button" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Contact_Social_Section" xml:space="preserve">
+    <value>Follow Us</value>
+  </data>
+  <data name="Contact_NoInfo" xml:space="preserve">
+    <value>No contact information available.</value>
+  </data>
+  <data name="About_Map_OpenHint" xml:space="preserve">
+    <value>Open in Maps</value>
+  </data>
+  <data name="About_Map_PinDescription" xml:space="preserve">
+    <value>Map pin</value>
+  </data>
+  <data name="About_Map_SemanticDescription" xml:space="preserve">
+    <value>Masjid location map for {0}. Double tap to open directions.</value>
+  </data>
+
+  <!-- ── Qibla (Batch B5) ──────────────────────────────────────────────────── -->  <data name="Qibla_Title" xml:space="preserve">
+    <value>Qibla Direction</value>
+  </data>
+  <data name="Qibla_LocationPermission_Rationale" xml:space="preserve">
+    <value>Location access is needed to calculate the Qibla direction accurately. Only your approximate location is used and is never stored or shared.</value>
+  </data>
+  <data name="Qibla_LocationDenied" xml:space="preserve">
+    <value>Location permission was denied. Please enable it in Settings to use Qibla.</value>
+  </data>
+  <data name="Qibla_SensorUnavailable" xml:space="preserve">
+    <value>Compass sensor is not available on this device.</value>
+  </data>
+  <data name="Qibla_Calibration_Hint" xml:space="preserve">
+    <value>For best accuracy, move your device in a figure-8 pattern to calibrate the compass.</value>
+  </data>
+
+  <!-- ── Camera permission (Add Masjid QR, Batch 02) ─────────────────────── -->
+  <data name="Camera_Permission_Title" xml:space="preserve">
+    <value>Camera Permission</value>
+  </data>
+  <data name="Camera_Permission_Rationale" xml:space="preserve">
+    <value>Camera access is needed to scan QR codes. You can still type the URL manually.</value>
+  </data>
+  <data name="Camera_NotSupported" xml:space="preserve">
+    <value>QR scanning is not available on this device. Please enter the URL manually.</value>
+  </data>
+  <data name="Camera_ScanQr_Placeholder" xml:space="preserve">
+    <value>Point your camera at the masjid's QR code. Full scanner integration coming soon - enter the URL manually for now.</value>
+  </data>
+
+  <!-- ── Donations (Batch B6) ──────────────────────────────────────────────── -->
+  <data name="Donations_Title" xml:space="preserve">
+    <value>Donate</value>
+  </data>
+  <data name="Donations_OpenBrowser_Button" xml:space="preserve">
+    <value>Open in Browser</value>
+  </data>
+  <data name="Donations_OpenBrowser_Description" xml:space="preserve">
+    <value>Open the donation page in the system browser</value>
+  </data>
+  <data name="Donations_NoUrl" xml:space="preserve">
+    <value>No donation link has been configured for this masjid.</value>
+  </data>
+  <data name="Donations_LoadError" xml:space="preserve">
+    <value>The donation page could not be loaded.</value>
+  </data>
+  <data name="Donations_BrowserError_Title" xml:space="preserve">
+    <value>Unable to Open Browser</value>
+  </data>
+  <data name="Donations_BrowserError_Message" xml:space="preserve">
+    <value>The donation link could not be opened in the system browser.</value>
+  </data>
+  <data name="Donations_SecurityNotice" xml:space="preserve">
+    <value>You will be taken to a secure external website to complete your donation. No payment information is collected by this app.</value>
+  </data>
+
+  <!-- ── Privacy (Batch E3) ─────────────────────────────────────────────────── -->
+  <data name="Privacy_Title" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="Privacy_Summary" xml:space="preserve">
+    <value>This app collects your device notification token (if you opt in to reminders) and your approximate location (only for Qibla calculation, never stored). No personal data is shared with third parties. Prayer times and masjid information are fetched from your configured masjid server.</value>
+  </data>
+  <data name="Privacy_Contact" xml:space="preserve">
+    <value>For privacy questions, contact your masjid administrator.</value>
+  </data>
+
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>
