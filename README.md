@@ -1,4 +1,4 @@
-# Masjid App
+# Masjid Feed
 
 Cross-platform mobile app (.NET MAUI) for prayer times, events, announcements, donations, push
 notifications, and home-screen widgets, integrated with the Masjid API (a WordPress plugin).
