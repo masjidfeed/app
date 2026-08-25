@@ -10,7 +10,7 @@
 # Usage:
 #   scripts/regenerate-ios-provisioning-profile.sh [options]
 #
-#   --repo <owner/name>       GitHub repository (default: bothellmosque/masjidapp).
+#   --repo <owner/name>       GitHub repository (default: masjidfeed/app).
 #   --bundle-id <identifier>  Apple bundle ID (default: com.goodsoftware.masjidapp).
 #   --profile-name <name>     Profile name prefix shown in Apple Developer.
 #   --certificate-id <id>     Use one App Store Connect certificate instead of all active
@@ -22,7 +22,7 @@
 set -euo pipefail
 
 API_BASE="https://api.appstoreconnect.apple.com/v1"
-REPO="bothellmosque/masjidapp"
+REPO="masjidfeed/app"
 BUNDLE_ID="com.goodsoftware.masjidapp"
 PROFILE_NAME_PREFIX="MasjidApp App Store"
 PROFILE_SECRET="IOS_PROVISIONING_PROFILE_BASE64"

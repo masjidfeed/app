@@ -123,7 +123,7 @@ Inspect a candidate run's artifacts:
 
 ```zsh
 RUN_ID=<workflow-run-id>
-gh api "repos/bothellmosque/masjidapp/actions/runs/$RUN_ID/artifacts" \
+gh api "repos/masjidfeed/app/actions/runs/$RUN_ID/artifacts" \
   --jq '.artifacts[] | [.name, .expired, .size_in_bytes] | @tsv'
 ```
 

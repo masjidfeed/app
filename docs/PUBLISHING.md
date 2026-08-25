@@ -259,7 +259,7 @@ The script uses the App Store Connect key under `~/.appstoreconnect`, creates a 
 `IOS_APP_STORE` profile with the active distribution certificate, and verifies production
 APNs, production App Attest, the App Group, and absence of development devices. Only after
 those checks pass does it install the profile locally and replace
-`IOS_PROVISIONING_PROFILE_BASE64` in `bothellmosque/masjidapp`. It does not revoke older
+`IOS_PROVISIONING_PROFILE_BASE64` in `masjidfeed/app`. It does not revoke older
 profiles. Apple does not expose App Attest Opt-In through the public API, so that initial
 bundle-ID capability remains a one-time portal action.
 
