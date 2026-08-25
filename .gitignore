@@ -63,6 +63,7 @@ nunit-*.xml
 *.app/
 *.dSYM/
 Platforms/Android/**/*.keystore
+Library/Application Support/Microsoft/DeveloperTools/*
 
 # IDEs
 .vs/
@@ -74,12 +75,6 @@ Platforms/Android/**/*.keystore
 
 # Local development env & secrets (NFR-SC-01 - never commit real secrets)
 *.local.json
-
-# WordPress content mounted into the devbox (keep the folder, ignore dropped-in content)
-backend/wp-content/**
-!backend/wp-content/
-!backend/wp-content/plugins/
-!backend/wp-content/plugins/.gitkeep
 
 # Formatted screenshots
 docs/appstore/screenshots/formatted/**
