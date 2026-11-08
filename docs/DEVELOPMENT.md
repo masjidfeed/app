@@ -90,6 +90,23 @@ dotnet build -t:Run -f net10.0-android \
   src/MasjidApp/MasjidApp.csproj
 ```
 
+`scripts/start-android.sh` pulls the key automatically: it downloads the same
+`google-maps-api-key` secret from Azure Key Vault the release build uses
+(`az` must be logged in), caches it at `~/.config/masjidapp/google-maps-api-key`
+(mode 600), and exports it for the build. `REFRESH_MAPS_KEY=1` re-downloads the
+cached value, and `PUBLISHING_KEY_VAULT_NAME`/`GOOGLE_MAPS_API_KEY`/`GOOGLE_MAPS_API_KEY_FILE`
+override the vault name, key value, and cache path respectively. When the vault
+is unreachable the script warns and builds keyless instead of failing.
+
+The emulator runs debug builds signed with the Android debug certificate; add its
+SHA-1 fingerprint alongside the `com.goodsoftware.masjidapp` package name to the
+key's application restrictions in Google Cloud Console, or tiles stay blank even
+with the key injected:
+
+```sh
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+```
+
 The project injects the value into the generated Android manifest. When no key is supplied,
 the app intentionally does not construct the embedded Google map and shows the branded
 address card instead; tapping it still opens an installed maps app or the HTTPS fallback.
