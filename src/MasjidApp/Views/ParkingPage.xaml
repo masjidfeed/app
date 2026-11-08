@@ -3,6 +3,7 @@
     x:Class="MasjidApp.Views.ParkingPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MasjidApp.Controls"
     xmlns:l="clr-namespace:MasjidApp.Localization"
     xmlns:vm="clr-namespace:MasjidApp.ViewModels"
     x:DataType="vm:ParkingViewModel"
@@ -27,7 +28,9 @@
                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
 
             <!-- Square rounded map: the host Border clips the native map to the
-                 rounded corners and the 1:1 sizing comes from WidthRequest. -->
+                 rounded corners and the 1:1 sizing comes from WidthRequest. The
+                 floating control stack mirrors the Apple Maps control column;
+                 zoom relies on the native controls (Google) / gestures (iOS). -->
             <Border
                 x:Name="MapRoot"
                 WidthRequest="352"
@@ -40,12 +43,48 @@
                 IsVisible="{Binding IsNativeMapConfigured}">
                 <Grid>
                     <Grid x:Name="MapHost" />
-                    <Label
-                        Margin="8"
-                        VerticalOptions="End"
-                        Style="{StaticResource TextMicro}"
-                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
-                        Text="{l:Localize Parking_MapHint}" />
+
+                    <!-- Floating map controls (expand, map type, locate, north).
+                         Hidden while the map is expanded; a single collapse button
+                         remains so the compact card can be restored. -->
+                    <VerticalStackLayout
+                        x:Name="MapControls"
+                        Margin="0,12,12,0"
+                        Spacing="10"
+                        HorizontalOptions="End"
+                        VerticalOptions="Start">
+                        <controls:MapControlButton
+                            x:Name="ExpandButton"
+                            Glyph="parking_expand.png"
+                            SemanticDescription="{l:Localize Parking_Expand_Button}"
+                            Tapped="OnExpandTapped" />
+                        <controls:MapControlButton
+                            x:Name="LayersButton"
+                            Glyph="parking_layers.png"
+                            SemanticDescription="{l:Localize Parking_Layers_Button}"
+                            Tapped="OnLayersTapped" />
+                        <controls:MapControlButton
+                            x:Name="LocateButton"
+                            Glyph="parking_locate.png"
+                            SemanticDescription="{l:Localize Parking_Center_Button}"
+                            Tapped="OnLocateTapped" />
+                        <controls:MapControlButton
+                            x:Name="NorthButton"
+                            Glyph="parking_north.png"
+                            Badge="{Binding NorthBadge}"
+                            SemanticDescription="{Binding NorthSemantic}"
+                            Tapped="OnNorthTapped" />
+                    </VerticalStackLayout>
+
+                    <controls:MapControlButton
+                        x:Name="CollapseButton"
+                        Margin="0,12,12,0"
+                        Glyph="parking_collapse.png"
+                        SemanticDescription="{l:Localize Parking_Collapse_Button}"
+                        IsVisible="False"
+                        Tapped="OnCollapseTapped"
+                        HorizontalOptions="End"
+                        VerticalOptions="Start" />
                 </Grid>
             </Border>
 
@@ -54,29 +93,6 @@
                 Style="{StaticResource TextBody}"
                 HorizontalTextAlignment="Center"
                 IsVisible="{Binding IsNativeMapConfigured, Converter={StaticResource InvertBoolConverter}}" />
-
-            <!-- Map controls: satellite/regular toggle plus zoom and recenter. -->
-            <HorizontalStackLayout
-                Spacing="8"
-                HorizontalOptions="Center"
-                IsVisible="{Binding IsNativeMapConfigured}">
-                <!-- Map layer selection uses the platform Picker control; zoom and
-                     recentering rely on the native map gestures/controls. -->
-                <Label
-                    Text="{l:Localize Parking_MapType_Label}"
-                    Style="{StaticResource TextCaption}"
-                    VerticalOptions="Center" />
-                <Picker
-                    ItemsSource="{Binding MapTypeOptions}"
-                    SelectedIndex="{Binding SelectedMapTypeIndex}"
-                    WidthRequest="150"
-                    SemanticProperties.Description="{l:Localize Parking_MapType_Label}" />
-                <Button
-                    Text="{l:Localize Parking_Center_Button}"
-                    Command="{Binding CenterOnLocationCommand}"
-                    Style="{StaticResource ButtonCompact}"
-                    SemanticProperties.Description="{l:Localize Parking_Center_Button}" />
-            </HorizontalStackLayout>
 
             <!-- Zone legend: small color swatches matching the map overlays. -->
             <HorizontalStackLayout

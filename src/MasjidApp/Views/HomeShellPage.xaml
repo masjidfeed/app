@@ -197,7 +197,13 @@
             </DataTemplate>
 
             <DataTemplate x:Key="RamadanTabTemplate" x:DataType="vm:HomeShellCategoryPage">
-                <views:RamadanSectionView BindingContext="{Binding Shell.Ramadan}" />
+                <!-- The carousel assigns the template root's BindingContext directly to the
+                     item, which cuts off the root's own BindingContext binding source. Wrapping
+                     in a Grid lets the child resolve {Binding Shell.Ramadan} through normal
+                     context inheritance instead. -->
+                <Grid>
+                    <views:RamadanSectionView BindingContext="{Binding Shell.Ramadan}" />
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="EventsTabTemplate" x:DataType="vm:HomeShellCategoryPage">
@@ -1020,10 +1026,18 @@
             Grid.Row="3"
             SafeAreaEdges="None">
 
+            <!-- IsScrollAnimated must stay false: on iOS an animated programmatic
+                 Position change gets interrupted by concurrent layout work (lazy
+                 About load, CategoryPages rebuild on first config load, rapid
+                 re-taps) and the native scroll callback then writes the
+                 intermediate position back through the TwoWay binding, landing
+                 the strip on the adjacent tab instead of the tapped one. Tab
+                 jumps are instant; swiping between pages stays smooth. -->
             <CarouselView
                 ItemsSource="{Binding CategoryPages}"
                 ItemTemplate="{StaticResource HomeShellTabTemplateSelector}"
                 Position="{Binding SelectedCategoryIndex, Mode=TwoWay}"
+                IsScrollAnimated="False"
                 IsSwipeEnabled="True"
                 Loop="False"
                 HorizontalScrollBarVisibility="Never"

@@ -84,20 +84,13 @@ public sealed partial class ParkingViewModel : ViewModelBase
     [ObservableProperty]
     private string? _activeEventBanner;
 
-    /// <summary>Localized map-layer options for the Picker; index 0 is satellite (the default).</summary>
-    public IReadOnlyList<string> MapTypeOptions =>
-    [
-        L("Parking_MapType_Satellite"),
-        L("Parking_MapType_Street"),
-    ];
-
-    /// <summary>Selected map layer: 0 = satellite (default), 1 = regular street map.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSatellite))]
-    private int _selectedMapTypeIndex;
-
     /// <summary><c>true</c> when the map shows satellite imagery (the default); <c>false</c> for the regular street map.</summary>
-    public bool IsSatellite => SelectedMapTypeIndex == 0;
+    [ObservableProperty]
+    private bool _isSatellite = true;
+
+    /// <summary><c>true</c> when the map is shown expanded (larger square) instead of the compact card.</summary>
+    [ObservableProperty]
+    private bool _isMapExpanded;
 
     /// <summary>Device location from the most recent "center on my location" action.</summary>
     [ObservableProperty]
@@ -110,6 +103,106 @@ public sealed partial class ParkingViewModel : ViewModelBase
 
     /// <summary>Whether a map-action status message is currently shown.</summary>
     public bool HasMapStatus => MapStatusMessage is not null;
+
+    /// <summary>
+    /// <c>true</c> while the map rotates live with the phone's compass heading;
+    /// <c>false</c> (the default) while the map is pinned north-up.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NorthBadge))]
+    [NotifyPropertyChangedFor(nameof(NorthSemantic))]
+    private bool _followsCompass;
+
+    /// <summary>Latest compass heading in degrees (0-360, clockwise from north).</summary>
+    [ObservableProperty]
+    private double _compassHeading;
+
+    /// <summary>N indicator drawn above the north arrow: shown only in north-up mode.</summary>
+    public string NorthBadge => FollowsCompass ? string.Empty : "N";
+
+    /// <summary>Accessible description for the north/compass toggle.</summary>
+    public string NorthSemantic => L(FollowsCompass ? "Parking_Compass_Button" : "Parking_North_Button");
+
+    /// <summary>
+    /// Stops the live compass rotation and returns the map to north-up.
+    /// Called by the page when it disappears.
+    /// </summary>
+    public void StopCompassFollow()
+    {
+        if (!FollowsCompass)
+        {
+            return;
+        }
+
+        try
+        {
+            Compass.Default.Stop();
+        }
+        catch (FeatureNotSupportedException)
+        {
+            // Compass already not running on this platform.
+        }
+
+        Compass.Default.ReadingChanged -= OnCompassReadingChanged;
+        FollowsCompass = false;
+    }
+
+    /// <summary>
+    /// Toggles between north-up and follow-compass map orientation. Following
+    /// the compass requires approximate-location permission on iOS, so the
+    /// request is made with a clear rationale before the sensor starts.
+    /// </summary>
+    [RelayCommand]
+    private async Task ToggleCompassAsync(CancellationToken ct)
+    {
+        MapStatusMessage = null;
+        if (FollowsCompass)
+        {
+            StopCompassFollow();
+            return;
+        }
+
+        try
+        {
+            var status = await Permissions
+                .CheckStatusAsync<CoarseLocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions
+                    .RequestAsync<CoarseLocationWhenInUse>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                MapStatusMessage = L("Parking_Validate_Denied");
+                return;
+            }
+
+            Compass.Default.ReadingChanged += OnCompassReadingChanged;
+            Compass.Default.Start(SensorSpeed.UI);
+            FollowsCompass = true;
+        }
+        catch (FeatureNotSupportedException)
+        {
+            MapStatusMessage = L("Parking_Compass_Unavailable");
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal cancellation when the page navigates away.
+        }
+#pragma warning disable CA1031 // Toggling must always surface a user-readable outcome.
+        catch (Exception)
+        {
+            MapStatusMessage = L("Parking_Validate_Unavailable");
+        }
+#pragma warning restore CA1031
+    }
+
+    private void OnCompassReadingChanged(object? sender, CompassChangedEventArgs e)
+    {
+        // HeadingMagneticNorth is normalized to 0-360 by the platform sensors.
+        CompassHeading = ((e.Reading.HeadingMagneticNorth % 360) + 360) % 360;
+    }
 
     /// <summary>Latest validation message, or <c>null</c> when none yet.</summary>
     [ObservableProperty]

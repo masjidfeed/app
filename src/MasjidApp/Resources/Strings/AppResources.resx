@@ -374,23 +374,26 @@
   </data>
 
   <!-- ── Parking guide (API-06 parking feature flag) ───────────────────────── -->
-  <data name="About_Parking_Button" xml:space="preserve">
-    <value>Parking guide</value>
-  </data>
   <data name="Parking_Title" xml:space="preserve">
     <value>Parking</value>
   </data>
-  <data name="Parking_MapHint" xml:space="preserve">
-    <value>Zone colors show where parking is allowed right now.</value>
+  <data name="Parking_Expand_Button" xml:space="preserve">
+    <value>Expand map</value>
   </data>
-  <data name="Parking_MapType_Label" xml:space="preserve">
-    <value>Map type</value>
+  <data name="Parking_Collapse_Button" xml:space="preserve">
+    <value>Collapse map</value>
   </data>
-  <data name="Parking_MapType_Satellite" xml:space="preserve">
-    <value>Satellite</value>
+  <data name="Parking_Layers_Button" xml:space="preserve">
+    <value>Switch between satellite and regular map</value>
   </data>
-  <data name="Parking_MapType_Street" xml:space="preserve">
-    <value>Regular</value>
+  <data name="Parking_North_Button" xml:space="preserve">
+    <value>Reset map to north</value>
+  </data>
+  <data name="Parking_Compass_Button" xml:space="preserve">
+    <value>Follow phone direction</value>
+  </data>
+  <data name="Parking_Compass_Unavailable" xml:space="preserve">
+    <value>The compass is not available on this device.</value>
   </data>
   <data name="Parking_Center_Button" xml:space="preserve">
     <value>Center</value>

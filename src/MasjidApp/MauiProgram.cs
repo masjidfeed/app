@@ -81,10 +81,10 @@ public static class MauiProgram
             static (handler, view) =>
             {
                 if (view is Microsoft.Maui.Controls.Maps.Map &&
-                    handler.PlatformView is Android.Gms.Maps.GoogleMap googleMap)
+                    handler.PlatformView is Android.Gms.Maps.MapView mapView &&
+                    NativeMapControlsApplied.TryAdd(mapView, mapView))
                 {
-                    googleMap.UiSettings.ZoomControlsEnabled = true;
-                    googleMap.UiSettings.CompassEnabled = true;
+                    mapView.GetMapAsync(new NativeMapControlsInitializer());
                 }
             });
 #endif
@@ -344,4 +344,23 @@ public static class MauiProgram
         client.DefaultRequestHeaders.UserAgent.Add(
             MasjidUserAgent.Create(UserAgentPlatform, AppInfo.Current.VersionString));
     }
+
+#if ANDROID
+    // Guard so the native map controls are applied once per platform MapView,
+    // even though the mapper fires on every virtual-view property update.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<object, object>
+        NativeMapControlsApplied = new();
+
+    /// <summary>Enables Google Maps' native zoom buttons and compass once the map is ready.</summary>
+    private sealed class NativeMapControlsInitializer :
+        Java.Lang.Object,
+        Android.Gms.Maps.IOnMapReadyCallback
+    {
+        public void OnMapReady(Android.Gms.Maps.GoogleMap googleMap)
+        {
+            googleMap.UiSettings.ZoomControlsEnabled = true;
+            googleMap.UiSettings.CompassEnabled = true;
+        }
+    }
+#endif
 }

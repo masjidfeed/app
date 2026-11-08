@@ -78,3 +78,5 @@ Library/Application Support/Microsoft/DeveloperTools/*
 
 # Formatted screenshots
 docs/appstore/screenshots/formatted/**
+
+backend/wp-content/*
