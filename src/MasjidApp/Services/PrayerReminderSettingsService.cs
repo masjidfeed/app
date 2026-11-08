@@ -90,6 +90,15 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         await _updateLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (!await IsFeatureEnabledAsync(ct).ConfigureAwait(false))
+            {
+                // Feature disabled by the masjid config (API-06): never schedule and
+                // cancel anything pending, without touching the user's stored choice.
+                InvalidateFingerprint();
+                await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
+                return PrayerReminderUpdateResult.Disabled;
+            }
+
             _preferences.SetValue(EnabledKey, enabled);
             _preferences.SetValue(MinutesBeforeKey, minutesBefore);
 
@@ -156,6 +165,15 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         await _updateLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (!await IsFeatureEnabledAsync(ct).ConfigureAwait(false))
+            {
+                // Feature disabled by the masjid config (API-06): keep the user's
+                // stored choice but make sure nothing stays scheduled.
+                InvalidateFingerprint();
+                await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
+                return PrayerReminderUpdateResult.Disabled;
+            }
+
             if (!IsEnabled)
             {
                 InvalidateFingerprint();
@@ -194,6 +212,17 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
 
     /// <inheritdoc />
     public void Dispose() => _updateLock.Dispose();
+
+    /// <summary>
+    /// Whether the active masjid's config enables the prayer-reminder feature (API-06).
+    /// A missing config or flag defaults to disabled so the app degrades gracefully.
+    /// </summary>
+    private async Task<bool> IsFeatureEnabledAsync(CancellationToken ct)
+    {
+        var config = (await _masjidContext.GetConfigAsync(ct: ct).ConfigureAwait(false))
+            ?.ValueOrDefault;
+        return config?.FeatureFlags?.PrayerReminders == true;
+    }
 
     private async Task<PrayerReminderUpdateResult> ScheduleAsync(
         IReadOnlyList<DailyPrayerSchedule> schedules,

@@ -14,8 +14,9 @@ namespace MasjidApp;
 /// <summary>
 /// Application shell - defines the bottom tab bar (Home, Donate, Prayer, Qibla)
 /// and registers all pushable routes.  Settings is accessible via the header icon
-/// on the Home page.  Donate tab visibility is controlled at runtime by the active
-/// masjid's <see cref="FeatureFlags"/> and donation URL (<c>FR-DN-04</c>, <c>API-06</c>).
+/// on the Home page.  Donate and Qibla tab visibility is controlled at runtime by
+/// the active masjid's <see cref="FeatureFlags"/> (and donation URL) (<c>FR-DN-04</c>,
+/// <c>API-06</c>).
 /// </summary>
 public partial class AppShell : Shell
 {
@@ -178,6 +179,7 @@ public partial class AppShell : Shell
 
         var showDonate = DonationNavigationPolicy.GetSafeDonationUri(config?.DonationUrl) is not null
                          && (config?.FeatureFlags?.Donations ?? false);
+        var showQibla = config?.FeatureFlags?.Qibla ?? false;
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -191,6 +193,11 @@ public partial class AppShell : Shell
             if (DonateTab.IsVisible != showDonate)
             {
                 DonateTab.IsVisible = showDonate;
+            }
+
+            if (QiblaTab.IsVisible != showQibla)
+            {
+                QiblaTab.IsVisible = showQibla;
             }
         });
     }

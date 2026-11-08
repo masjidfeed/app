@@ -154,10 +154,13 @@
                             SemanticProperties.Description="Retry notification registration" />
                     </VerticalStackLayout>
 
+                    <!-- Iqama reminders - hidden when the prayerReminders flag is disabled (API-06) -->
                     <BoxView HeightRequest="1" Margin="16,0,0,0"
-                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                             IsVisible="{Binding IsPrayerRemindersUiVisible}" />
 
-                    <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                    <Grid Padding="16,14" ColumnDefinitions="*,Auto"
+                          IsVisible="{Binding IsPrayerRemindersUiVisible}">
                         <Label
                             Grid.Column="0"
                             Text="{l:Localize Settings_Notifications_Section}"
@@ -174,11 +177,13 @@
                     </Grid>
 
                     <BoxView HeightRequest="1" Margin="16,0,0,0"
-                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                             IsVisible="{Binding IsPrayerRemindersUiVisible}" />
 
                     <Grid
                         Padding="16,14"
                         ColumnDefinitions="*,Auto,Auto"
+                        IsVisible="{Binding IsPrayerRemindersUiVisible}"
                         IsEnabled="{Binding CanChangePrayerReminderLeadTime}">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding OpenPrayerReminderLeadTimeCommand}" />

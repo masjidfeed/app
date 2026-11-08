@@ -900,8 +900,8 @@
 
                 <HorizontalStackLayout Spacing="0">
 
-                    <!-- Announcements -->
-                    <VerticalStackLayout>
+                    <!-- Announcements - hidden when the announcements flag is disabled (API-06) -->
+                    <VerticalStackLayout IsVisible="{Binding IsAnnouncementsEnabled}">
                         <Label
                             Text="Announcements"
                             Style="{StaticResource CategoryLabelStyle}"
@@ -925,8 +925,8 @@
                             IsVisible="{Binding IsTodaySelected}" />
                     </VerticalStackLayout>
 
-                    <!-- Events -->
-                    <VerticalStackLayout>
+                    <!-- Events - hidden when the events flag is disabled (API-06) -->
+                    <VerticalStackLayout IsVisible="{Binding IsEventsEnabled}">
                         <Label
                             Text="Events"
                             Style="{StaticResource CategoryLabelStyle}"

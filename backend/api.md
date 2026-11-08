@@ -93,7 +93,8 @@ Example response:
   "endpoints": {
     "salahApiUrl": "https://example.org/wp-json/masjid/v1/salahapi",
     "eventsUrl": "https://example.org/wp-json/masjid/v1/events",
-    "announcementsUrl": "https://example.org/wp-json/masjid/v1/announcements"
+    "announcementsUrl": "https://example.org/wp-json/masjid/v1/announcements",
+    "parkingUrl": "https://example.org/wp-json/masjid/v1/parking-config"
   },
   "contact": {
     "address": "123 Example Street",
@@ -102,6 +103,7 @@ Example response:
     "website": "https://example.org/"
   },
   "donationUrl": "https://example.org/donate/",
+  "ramadanUrl": "https://example.org/ramadan/",
   "social": {
     "facebook": "https://facebook.com/example",
     "instagram": "https://instagram.com/example",
@@ -111,6 +113,8 @@ Example response:
     "events": true,
     "announcements": true,
     "donations": true,
+    "ramadan": true,
+    "parking": true,
     "qibla": true,
     "prayerReminders": true
   },
@@ -135,7 +139,13 @@ Example response:
 ```
 
 All URL and contact values are strings and may be empty. `logoUrl` and
-`splashLogoUrl` are empty strings when no image is configured.
+`splashLogoUrl` are empty strings when no image is configured. `ramadanUrl` is
+an empty string when no Ramadan page is configured.
+
+When Content-only Rendering is enabled under **Settings > Masjid App**, a
+non-empty `donationUrl` or `ramadanUrl` automatically includes
+`render=contentOnly`. Existing query parameters on either configured URL are
+preserved.
 
 `pushNotifications.configured` is true only when encrypted server credentials
 and both platform configurations exist. Firebase client API keys in this
@@ -185,20 +195,61 @@ curl --fail-with-body --silent --show-error \
 
 `platform` is `ios` or `android`. `previousToken` is optional; after the new
 token is subscribed successfully, it is unsubscribed to complete token
-rotation. The App Check application ID must match the uploaded configuration
-for the declared platform.
+rotation. `registrationMode` is optional and selects how a site delivering
+through the hosted MasjidFeed service registers the device (see below);
+sites using their own Firebase project ignore it. The App Check application
+ID must match the uploaded configuration for the declared platform.
 
 Example response:
 
 ```json
 {
-  "registered": true,
-  "result": {
-    "successful": true,
-    "errorCount": 0
+  "registered": true
+}
+```
+
+#### Hosted MasjidFeed push service
+
+When the site delivers push through the hosted MasjidFeed service instead of
+its own Firebase project, the server forwards the App Check token to the push
+gateway, which verifies it against the central Firebase project. Two
+registration flavors are available through the optional `registrationMode`
+parameter:
+
+- `server` (default): the FCM registration token is forwarded together with
+  the App Check token, and the gateway registers the token with the site's
+  canonical topic server-side (via FCM's Instance ID service). The token is
+  passed through and stored by neither the site nor the gateway. `token` is
+  required, as for the site-owned Firebase path.
+- `client`: the gateway returns only the site's canonical topic, and the app
+  subscribes to it itself (Firebase Messaging `subscribeToTopic`). `token`
+  is not required for this flavor.
+
+`client` mode answers with the `topicKey` payload:
+
+```json
+{
+  "registered": false,
+  "topicKey": {
+    "site_id": "ms_1a2b3c4d",
+    "topic": "tenant_ms_1a2b3c4d_v1_8f4e2c",
+    "version": 1,
+    "expires_at": "2026-11-01T12:00:00Z"
   }
 }
 ```
+
+In `client` mode the app subscribes to `topicKey.topic` itself; in `server`
+mode the registration already happened and subscribing client-side to the
+same topic is optional. Re-registering after a topic rotation moves the
+device onto the new topic under both flavors.
+
+A site configured for both delivery channels adds the site-Firebase `result`
+to whichever payload the hosted service produced (`registered: true`, or
+`registered: false` with `topicKey`). `DELETE /push/registrations` under the
+hosted service performs no
+server-side action and always answers `{"registered": false}`: unsubscription
+happens client-side against the topic from `topicKey`.
 
 ### `DELETE /push/registrations`
 
@@ -463,12 +514,21 @@ Posts with event dates enabled also contain these event fields:
 
 ### `GET /events`
 
-Returns an array containing at most 20 published upcoming events, ordered by
-event date ascending. Site settings may filter the result by category or tag.
+Returns an array of published upcoming events, ordered by event date ascending.
+Site settings may filter the result by category or tag.
+
+Query parameters:
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `limit` | integer | `20` | Maximum number of events to return. Values above `100` are capped at `100`. |
 
 ```sh
 curl --fail-with-body --silent --show-error \
   "$BASE_URL/events"
+
+curl --fail-with-body --silent --show-error \
+  "$BASE_URL/events?limit=50"
 ```
 
 Example response:
@@ -494,21 +554,32 @@ Example response:
 ]
 ```
 
-If the Awesome Events plugin is unavailable, this endpoint returns `503` with
-error code `masjidapp_missing_dependency`.
+If no events plugin is selected in MasjidFeed App settings, or the selected
+plugin is inactive, this endpoint returns `503` with error code
+`masjidapp_missing_dependency`. Supported event plugins are Awesome Calendar
+Events and The Events Calendar.
 
 ## Announcements
 
 ### `GET /announcements`
 
-Returns an array containing at most 20 published, non-password-protected posts,
-ordered by publication date descending. Site settings may filter the result by
-category or tag. Administrators may also select a Friday category that replaces
-the regular announcement filters on Fridays in the WordPress site timezone.
+Returns an array of published, non-password-protected posts, ordered by
+publication date descending. Site settings may filter the result by category or
+tag. Administrators may also select a Friday category that replaces the regular
+announcement filters on Fridays in the WordPress site timezone.
+
+Query parameters:
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `limit` | integer | `20` | Maximum number of announcements to return. Values above `100` are capped at `100`. |
 
 ```sh
 curl --fail-with-body --silent --show-error \
   "$BASE_URL/announcements"
+
+curl --fail-with-body --silent --show-error \
+  "$BASE_URL/announcements?limit=50"
 ```
 
 Example response:
@@ -567,6 +638,82 @@ The endpoint returns `404` with error code `masjidapp_post_not_found` when the
 post is missing, is not a standard WordPress post, is not published, or is
 password protected.
 
+## Parking Map
+
+### `GET /parking-config`
+
+Returns the parking map document consumed by the ICOB app: the mosque's
+location, the parking zone outlines, and the schedules during which
+restrictions apply. The data is maintained by site administrators on the
+plugin's Parking settings tab; the endpoint returns `404` with error code
+`masjidfeed_parking_config_missing` while nothing has been saved, and the app
+falls back to its built-in copy on any non-200 response.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --user-agent 'ICOB-iOS/2.4.1' \
+  "$BASE_URL/parking-config"
+```
+
+Example response:
+
+```json
+{
+  "center": { "latitude": 47.7779, "longitude": -122.1906 },
+  "nearRadiusMeters": 800,
+  "zones": [
+    {
+      "id": "north-lot",
+      "name": "North lot",
+      "type": "no-parking",
+      "message": "Please move to a permitted parking area.",
+      "coordinates": [
+        { "latitude": 47.77882298016584, "longitude": -122.19132629326828 },
+        { "latitude": 47.77882298016584, "longitude": -122.18952387645021 },
+        { "latitude": 47.77809991713082, "longitude": -122.18952387645021 },
+        { "latitude": 47.77809991713082, "longitude": -122.19132629326828 }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "jummah",
+      "name": "Friday Prayer",
+      "message": "Strict parking rules are in effect for Friday prayer.",
+      "schedule": { "type": "weekly", "days": [5], "start": "11:30", "end": "15:30" },
+      "zoneIds": "all"
+    }
+  ]
+}
+```
+
+Field notes:
+
+- `center` is required; `latitude` and `longitude` are JSON numbers.
+- `nearRadiusMeters` is optional and defaults to `800` when absent. How close
+  to `center` counts as "near" for the parking banner.
+- `zones` is required; `events` is required and may be `[]`.
+- Zone `type` is one of `no-parking` (red), `event-restricted` (yellow), or
+  `allowed` (green). These values are closed: new values need an app release.
+- Zone `coordinates` are `{ "latitude", "longitude" }` objects, at least 3
+  points, first point not repeated at the end; the app closes the shape
+  itself. The coordinate format is closed: `[lat, lon]` arrays are not
+  accepted by the app.
+- `message` is optional and shown to someone standing in the zone while it is
+  off limits.
+- Event `schedule` is either
+  `{"type": "weekly", "days": [0-6], "start": "HH:mm", "end": "HH:mm"}` or
+  `{"type": "dates", "dates": ["YYYY-MM-DD"], "start": "HH:mm", "end":
+  "HH:mm"}`. `days` uses 0 for Sunday through 6 for Saturday. Times are
+  24-hour `HH:mm` read in the phone's local time; a window may run past
+  midnight and the day/date is the one the window starts on. `start` and
+  `end` always differ.
+- Event `zoneIds` is `"all"` or a list of zone `id`s. While an event is
+  active the app shows and checks only the listed zones. When no event is
+  active every zone is shown in its own colour and `event-restricted` zones
+  count as allowed.
+- If two events are active at once, the app uses the one listed first.
+
 ## ETag Caching
 
 The following responses support conditional requests:
@@ -578,6 +725,7 @@ The following responses support conditional requests:
 | `GET /events` | Weak, generated from the JSON payload | `public, max-age=60, s-maxage=300` |
 | `GET /announcements` | Weak, generated from the JSON payload and active filter mode | `public, max-age=60, s-maxage=600` |
 | `GET /posts/{id}` | Weak, generated from the JSON payload | `public, max-age=60, s-maxage=3600` |
+| `GET /parking-config` | Weak, generated from the JSON payload | `public, max-age=60, s-maxage=3600` |
 
 Configuration, event, and post responses use a weak ETag generated from
 the exact JSON payload. Announcement ETags also include whether the regular or
@@ -635,6 +783,7 @@ candidate ETags, or `If-None-Match: *`. Browsers may read `ETag` and send
 `If-None-Match` in cross-origin requests because both headers are included in
 the route's CORS policy.
 
-Saving Masjid App settings invalidates the cached configuration. The next
-`GET /config` rebuilds the response and derives a new ETag when its JSON payload
-has changed.
+Saving Masjid App settings invalidates the cached configuration. Saving the
+parking configuration on the Parking tab invalidates the cached parking
+document the same way. The next `GET /config` rebuilds the response and
+derives a new ETag when its JSON payload has changed.

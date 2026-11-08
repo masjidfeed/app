@@ -90,8 +90,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     // ─── Category strip ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Zero-based index of the selected category strip item.
-    /// 0 = Today · 1 = Events · 2 = About.
+    /// Zero-based index of the selected category strip item, indexing into
+    /// <see cref="CategoryPages"/> (which shrinks when feature flags disable a category).
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTodaySelected))]
@@ -99,20 +99,36 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsAboutSelected))]
     private int _selectedCategoryIndex;
 
+    /// <summary>The category currently selected in the strip, or <c>null</c> when out of range.</summary>
+    public HomeShellCategory? SelectedCategory =>
+        SelectedCategoryIndex >= 0 && SelectedCategoryIndex < CategoryPages.Count
+            ? CategoryPages[SelectedCategoryIndex].Category
+            : null;
+
     /// <summary><c>true</c> when the "Today" category is active.</summary>
-    public bool IsTodaySelected => SelectedCategoryIndex == 0;
+    public bool IsTodaySelected => SelectedCategory == HomeShellCategory.Announcements;
 
     /// <summary><c>true</c> when the "Events" category is active.</summary>
-    public bool IsEventsSelected => SelectedCategoryIndex == 1;
+    public bool IsEventsSelected => SelectedCategory == HomeShellCategory.Events;
 
     /// <summary><c>true</c> when the "About" category is active.</summary>
-    public bool IsAboutSelected => SelectedCategoryIndex == 2;
+    public bool IsAboutSelected => SelectedCategory == HomeShellCategory.About;
 
     /// <summary>About sub-ViewModel hosted inline in the "About" category (FR-ST-05, FR-CM-02, FR-CM-04).</summary>
     public AboutViewModel About { get; }
 
-    /// <summary>Swipe pages hosted by the home shell carousel.</summary>
-    public IReadOnlyList<HomeShellCategoryPage> CategoryPages { get; }
+    /// <summary>Swipe pages hosted by the home shell carousel; rebuilt when feature flags load.</summary>
+    public ObservableCollection<HomeShellCategoryPage> CategoryPages { get; }
+
+    /// <summary>Whether the announcements feature is enabled for the active masjid (API-06).</summary>
+    [ObservableProperty]
+    private bool _isAnnouncementsEnabled = true;
+
+    /// <summary>Whether the events feature is enabled for the active masjid (API-06).</summary>
+    [ObservableProperty]
+    private bool _isEventsEnabled = true;
+
+    private readonly IReadOnlyList<HomeShellCategoryPage> _allCategoryPages;
 
     // ─── "Today" feed (FR-CM-01) ────────────────────────────────────────────────
 
@@ -187,12 +203,13 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         _deliveredNotifications = deliveredNotifications;
         _logger = logger;
         About = about;
-        CategoryPages =
+        _allCategoryPages =
         [
             new(HomeShellCategory.Announcements, this),
             new(HomeShellCategory.Events, this),
             new(HomeShellCategory.About, this),
         ];
+        CategoryPages = new ObservableCollection<HomeShellCategoryPage>(_allCategoryPages);
         Title = "Home";
         _notificationInbox.Changed += OnNotificationInboxChanged;
         _context.ActiveMasjidChanged += OnNotificationInboxChanged;
@@ -234,17 +251,29 @@ public sealed partial class HomeShellViewModel : ViewModelBase
                 LogoUrl = EndpointUrlResolver.ResolveAgainstOrigin(
                     config.Branding?.LogoUrl,
                     _context.ActiveEntry?.ConfigUrl);
+
+                // Hide disabled feature categories and clear their feeds (API-06).
+                ApplyFeatureFlags(config);
             }
 
             // FR-CM-01, FR-EV-01, NFR-RL-01: start all content branches together so
-            // prayer/widget/reminder latency cannot starve either feed.
+            // prayer/widget/reminder latency cannot starve either feed. A disabled
+            // feature flag resolves to a null feed URL, which clears the cached list.
             var prayerTask = LoadPrayerDataAsync(cachePolicy, ct);
             var announcementsTask = config is null
                 ? Task.FromResult(new ContentState(false, null, false))
-                : LoadAnnouncementsSafelyAsync(config.Endpoints?.AnnouncementsUrl, cachePolicy, ct);
+                : LoadAnnouncementsSafelyAsync(
+                    config.FeatureFlags?.Announcements == true
+                        ? config.Endpoints?.AnnouncementsUrl
+                        : null,
+                    cachePolicy, ct);
             var eventsTask = config is null
                 ? Task.FromResult(new ContentState(false, null, false))
-                : LoadEventsSafelyAsync(config.Endpoints?.EventsUrl, cachePolicy, ct);
+                : LoadEventsSafelyAsync(
+                    config.FeatureFlags?.Events == true
+                        ? config.Endpoints?.EventsUrl
+                        : null,
+                    cachePolicy, ct);
 
             await Task.WhenAll(prayerTask, announcementsTask, eventsTask);
 
@@ -493,7 +522,63 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     partial void OnSelectedCategoryIndexChanged(int value)
     {
         // Lazily load About content when the category gains focus (API-06, API-10).
-        if (value == 2 && About.LoadCommand.CanExecute(null))
+        if (SelectedCategory == HomeShellCategory.About && About.LoadCommand.CanExecute(null))
+        {
+            About.LoadCommand.Execute(null);
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the category strip and swipe pages from the active masjid's feature
+    /// flags (API-06): disabled features disappear from the strip, and a removed
+    /// selected category falls back to the first visible page. Only categories with
+    /// an always-visible counterpart (About) can be removed without leaving the
+    /// carousel empty.
+    /// </summary>
+    private void ApplyFeatureFlags(MasjidConfig config)
+    {
+        var announcementsEnabled = config.FeatureFlags?.Announcements == true;
+        var eventsEnabled = config.FeatureFlags?.Events == true;
+
+        IsAnnouncementsEnabled = announcementsEnabled;
+        IsEventsEnabled = eventsEnabled;
+
+        var visible = _allCategoryPages
+            .Where(page => page.Category switch
+            {
+                HomeShellCategory.Announcements => announcementsEnabled,
+                HomeShellCategory.Events => eventsEnabled,
+                _ => true,
+            })
+            .ToList();
+
+        var selectedCategory = SelectedCategory;
+        var structureChanged = visible.Count != CategoryPages.Count ||
+            visible.Where((page, i) => CategoryPages[i].Category != page.Category).Any();
+
+        if (structureChanged)
+        {
+            CategoryPages.Clear();
+            foreach (var page in visible)
+            {
+                CategoryPages.Add(page);
+            }
+
+            var newIndex = selectedCategory is null
+                ? -1
+                : visible.FindIndex(page => page.Category == selectedCategory);
+            SelectedCategoryIndex = newIndex >= 0 ? newIndex : 0;
+
+            // A same-index selection can resolve to a different category after the
+            // rebuild, so re-assert the strip highlights (MVVM toolkit skips setters
+            // that do not change the stored index).
+            OnPropertyChanged(nameof(IsTodaySelected));
+            OnPropertyChanged(nameof(IsEventsSelected));
+            OnPropertyChanged(nameof(IsAboutSelected));
+        }
+
+        // The clamp above can land on About without changing the stored index.
+        if (SelectedCategory == HomeShellCategory.About && About.LoadCommand.CanExecute(null))
         {
             About.LoadCommand.Execute(null);
         }
@@ -562,6 +647,19 @@ public sealed partial class HomeShellViewModel : ViewModelBase
             !string.Equals(config.Masjid?.Id, deepLink.MasjidId, StringComparison.Ordinal))
         {
             LogDeepLinkResolutionRejected(_logger, deepLink.PostId, "tenant mismatch or missing config");
+            return false;
+        }
+
+        // Feature-flagged feeds must not be reachable through notifications either (API-06).
+        var featureEnabled = deepLink.Type switch
+        {
+            PostDeepLinkType.Announcements => config.FeatureFlags?.Announcements == true,
+            PostDeepLinkType.Events => config.FeatureFlags?.Events == true,
+            _ => false,
+        };
+        if (!featureEnabled)
+        {
+            LogDeepLinkResolutionRejected(_logger, deepLink.PostId, "feature disabled by configuration");
             return false;
         }
 

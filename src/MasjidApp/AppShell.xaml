@@ -52,8 +52,10 @@
                 ContentTemplate="{DataTemplate views:PrayerTimesPage}" />
         </Tab>
 
-        <!-- Qibla tab - always visible; opens the Qibla compass page (FR-CM-03). -->
+        <!-- Qibla tab - hidden when the qibla feature flag is disabled (API-06).
+             Visibility is managed in AppShell.xaml.cs based on config. -->
         <Tab
+            x:Name="QiblaTab"
             Title="Qibla"
             Icon="tab_qibla.png"
             SemanticProperties.Description="Qibla compass tab">

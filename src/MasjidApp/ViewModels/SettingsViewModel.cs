@@ -79,12 +79,25 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanChangePrayerReminderLeadTime))]
     private bool _isUpdatingPrayerReminders;
 
+    /// <summary>Whether the prayer-reminder feature is enabled for the active masjid (API-06).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanChangePrayerReminderSettings))]
+    [NotifyPropertyChangedFor(nameof(CanChangePrayerReminderLeadTime))]
+    [NotifyPropertyChangedFor(nameof(IsPrayerRemindersUiVisible))]
+    private bool _prayerRemindersFeatureEnabled = true;
+
+    /// <summary>Whether the prayer-reminder rows should be shown in Settings.</summary>
+    public bool IsPrayerRemindersUiVisible => PrayerRemindersFeatureEnabled;
+
     /// <summary>Whether the prayer-reminder toggle can currently be changed.</summary>
-    public bool CanChangePrayerReminderSettings => !IsUpdatingPrayerReminders;
+    public bool CanChangePrayerReminderSettings =>
+        PrayerRemindersFeatureEnabled && !IsUpdatingPrayerReminders;
 
     /// <summary>Whether the iqama lead time can currently be changed.</summary>
     public bool CanChangePrayerReminderLeadTime =>
-        PrayerRemindersEnabled && !IsUpdatingPrayerReminders;
+        PrayerRemindersFeatureEnabled &&
+        PrayerRemindersEnabled &&
+        !IsUpdatingPrayerReminders;
 
     /// <summary>Whether remote push is enabled by the user (including the failed state).</summary>
     [ObservableProperty]
@@ -236,7 +249,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         PushNotificationState = await _pushNotificationSettings.RefreshAsync(ct);
         PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
-        AnnouncementsFeatureEnabled = await IsAnnouncementsFeatureEnabledAsync(ct);
+
+        var config = (await _masjidContext.GetConfigAsync(ct: ct))?.ValueOrDefault;
+        AnnouncementsFeatureEnabled = config?.FeatureFlags?.Announcements ?? false;
+        PrayerRemindersFeatureEnabled = config?.FeatureFlags?.PrayerReminders ?? false;
+
         PushNotificationStatus = PushNotificationState == PushNotificationState.EnabledButFailed
             ? Localize("Settings_PushNotifications_Status_RegistrationFailed")
             : string.Empty;
@@ -313,12 +330,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         {
             IsUpdatingPushNotifications = false;
         }
-    }
-
-    private async Task<bool> IsAnnouncementsFeatureEnabledAsync(CancellationToken ct)
-    {
-        var config = (await _masjidContext.GetConfigAsync(ct: ct))?.ValueOrDefault;
-        return config?.FeatureFlags?.Announcements ?? false;
     }
 
     /// <summary>Persists and applies the current reminder toggle and iqama lead time.</summary>
