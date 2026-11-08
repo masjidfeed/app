@@ -50,14 +50,19 @@ public partial class App : Application
     {
         // F2: show the mandatory first-run setup screen when no masjid is configured;
         // go straight to the normal shell when one is already active (API-10, FR-ST-01).
+        // The welcome page is shown exactly once, before masjid selection (persisted
+        // flag in WelcomeState) - including the upgrade path where a masjid already
+        // exists, in which case finishing it falls through to the branded splash.
         // FR-ST-08: native platform launch screens remain plain white until MAUI starts.
         var activeEntry = _masjidContext.ActiveEntry;
         var branding = TenantBranding.Get(activeEntry);
         _ = _appIconService.ApplyAsync(branding);
 
-        Page rootPage = activeEntry is null
-            ? _services.GetRequiredService<SetupPage>()
-            : _services.GetRequiredService<BrandedSplashPage>();
+        Page rootPage = !WelcomeState.WasShown
+            ? _services.GetRequiredService<WelcomePage>()
+            : activeEntry is null
+                ? _services.GetRequiredService<SetupPage>()
+                : _services.GetRequiredService<BrandedSplashPage>();
 
         var window = new Window(rootPage);
         window.Stopped += OnWindowStopped;

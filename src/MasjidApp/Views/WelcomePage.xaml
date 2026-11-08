@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.WelcomePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    x:DataType="vm:WelcomeViewModel"
+    NavigationPage.HasNavigationBar="False"
+    Shell.NavBarIsVisible="False"
+    Title="">
+
+    <!-- Welcome/onboarding: shown exactly once (persisted flag, see WelcomeState)
+         before masjid selection. Carousel of feature showcase slides with standard
+         dot progress indicators, Skip in the top corner, Next at the bottom. -->
+
+    <Grid
+        RowDefinitions="Auto,*,Auto,Auto"
+        RowSpacing="16"
+        Padding="24,16,24,24">
+
+        <!-- Skip - top trailing corner (mirrors with RTL flow direction). -->
+        <Button
+            Grid.Row="0"
+            Text="{l:Localize Welcome_Skip_Button}"
+            BackgroundColor="Transparent"
+            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+            HorizontalOptions="End"
+            Command="{Binding SkipCommand}"
+            AutomationId="WelcomeSkipButton"
+            SemanticProperties.Description="{l:Localize Welcome_Skip_Button}" />
+
+        <CarouselView
+            Grid.Row="1"
+            ItemsSource="{Binding Slides}"
+            Position="{Binding Position, Mode=TwoWay}"
+            IndicatorView="Dots"
+            Loop="False"
+            VerticalOptions="Fill"
+            AutomationId="WelcomeCarousel">
+            <CarouselView.ItemTemplate>
+                <DataTemplate x:DataType="vm:WelcomeSlide">
+                    <!-- Rounded square box with the slide's app screenshot;
+                         title + description sit underneath. -->
+                    <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="20" Padding="8,0" VerticalOptions="Center">
+                        <Border
+                            Grid.Row="0"
+                            WidthRequest="280"
+                            HeightRequest="280"
+                            HorizontalOptions="Center"
+                            Padding="0"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 24"
+                            BackgroundColor="{DynamicResource ActivePrimarySoftColor}">
+                            <Image
+                                Source="{Binding Image}"
+                                Aspect="AspectFill"
+                                SemanticProperties.Description="{Binding Title}" />
+                        </Border>
+
+                        <Label
+                            Grid.Row="1"
+                            Text="{Binding Title}"
+                            Style="{StaticResource TextHeadline}"
+                            HorizontalTextAlignment="Center"
+                            SemanticProperties.HeadingLevel="Level1" />
+
+                        <Label
+                            Grid.Row="2"
+                            Text="{Binding Description}"
+                            Style="{StaticResource TextBody}"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    </Grid>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <!-- Standard dot progress indicators. -->
+        <IndicatorView
+            Grid.Row="2"
+            x:Name="Dots"
+            HorizontalOptions="Center"
+            IndicatorColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray500}}"
+            SelectedIndicatorColor="{DynamicResource ActivePrimaryColor}" />
+
+        <!-- Next / Get Started (on the last slide). -->
+        <Button
+            Grid.Row="3"
+            Text="{Binding NextButtonText}"
+            Command="{Binding NextCommand}"
+            AutomationId="WelcomeNextButton"
+            SemanticProperties.Description="{Binding NextButtonText}" />
+
+    </Grid>
+</ContentPage>

@@ -280,6 +280,9 @@ public static class MauiProgram
 
         // Shell + Views (resolved through DI by the Shell when navigating).
         services.AddSingleton<AppShell>();
+        // Welcome/onboarding: one-time feature showcase before masjid selection.
+        services.AddTransient<WelcomeViewModel>();
+        services.AddTransient<WelcomePage>();
         // F2: First-run setup page - shown as window root when no masjid is configured.
         services.AddTransient<SetupPage>();
         // Batch F1: Home shell page (singleton - persists across tab switches).

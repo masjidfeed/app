@@ -411,6 +411,59 @@
     <value>You will be taken to a secure external website to complete your donation. No payment information is collected by this app.</value>
   </data>
 
+  <!-- ── Welcome / Onboarding (shown once, before masjid selection) ─────────── -->
+  <data name="Welcome_Next_Button" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Welcome_Skip_Button" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="Welcome_GetStarted_Button" xml:space="preserve">
+    <value>Get Started</value>
+  </data>
+  <data name="Welcome_Slide_Announcements_Title" xml:space="preserve">
+    <value>Announcements</value>
+  </data>
+  <data name="Welcome_Slide_Announcements_Description" xml:space="preserve">
+    <value>Important news from your masjid, right in your feed. Updates appear as soon as they are published.</value>
+  </data>
+  <data name="Welcome_Slide_Events_Title" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Welcome_Slide_Events_Description" xml:space="preserve">
+    <value>See what's coming up. Classes, programs, and community events with times and details at a glance.</value>
+  </data>
+  <data name="Welcome_Slide_PrayerTimes_Title" xml:space="preserve">
+    <value>Prayer Times</value>
+  </data>
+  <data name="Welcome_Slide_PrayerTimes_Description" xml:space="preserve">
+    <value>Athan and iqama times for your masjid, always current - even when you are offline.</value>
+  </data>
+  <data name="Welcome_Slide_Widgets_Title" xml:space="preserve">
+    <value>Prayer Time Widgets</value>
+  </data>
+  <data name="Welcome_Slide_Widgets_Description" xml:space="preserve">
+    <value>Add a home-screen widget to see the next prayer at a glance, without opening the app.</value>
+  </data>
+  <data name="Welcome_Slide_Notifications_Title" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Welcome_Slide_Notifications_Description" xml:space="preserve">
+    <value>Get a gentle reminder before each prayer. Turn reminders on or off any time in Settings.</value>
+  </data>
+  <data name="Welcome_Slide_Donations_Title" xml:space="preserve">
+    <value>Convenient Donations</value>
+  </data>
+  <data name="Welcome_Slide_Donations_Description" xml:space="preserve">
+    <value>Support your masjid with quick, secure donations right from the app.</value>
+  </data>
+  <data name="Welcome_Slide_SelectMasjid_Title" xml:space="preserve">
+    <value>Select the Local Masjid</value>
+  </data>
+  <data name="Welcome_Slide_SelectMasjid_Description" xml:space="preserve">
+    <value>Connect to your local masjid to finish setup. MasjidFeed must be enabled on the masjid's website.</value>
+  </data>
+
   <!-- ── Privacy (Batch E3) ─────────────────────────────────────────────────── -->
   <data name="Privacy_Title" xml:space="preserve">
     <value>Privacy Policy</value>
