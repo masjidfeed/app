@@ -5,10 +5,25 @@ public static class MasjidConfigUrl
 {
     private const string ConfigPath = "/wp-json/masjid/v1/config";
 
+    /// <summary>Trims the input and defaults the scheme to HTTPS when the user omitted it.</summary>
+    private static string? NormalizeInput(string? input)
+    {
+        var trimmed = input?.Trim();
+
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        return trimmed.Contains("://", StringComparison.Ordinal)
+            ? trimmed
+            : $"{Uri.UriSchemeHttps}{Uri.SchemeDelimiter}{trimmed}";
+    }
+
     /// <summary>Resolves a website or complete config URL to the canonical config endpoint.</summary>
     public static string? Resolve(string? input)
     {
-        if (!Uri.TryCreate(input?.Trim(), UriKind.Absolute, out var uri))
+        if (!Uri.TryCreate(NormalizeInput(input), UriKind.Absolute, out var uri))
         {
             return null;
         }
@@ -24,7 +39,7 @@ public static class MasjidConfigUrl
     /// <summary>Returns the website origin used to verify that the submitted site is online.</summary>
     public static string? ResolveWebsite(string? input)
     {
-        if (!Uri.TryCreate(input?.Trim(), UriKind.Absolute, out var uri))
+        if (!Uri.TryCreate(NormalizeInput(input), UriKind.Absolute, out var uri))
         {
             return null;
         }

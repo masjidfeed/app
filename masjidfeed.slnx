@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/MasjidApp.Core/MasjidApp.Core.csproj" />
+    <Project Path="src/MasjidApp/MasjidApp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MasjidApp.Core.Tests/MasjidApp.Core.Tests.csproj" />

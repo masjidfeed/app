@@ -105,7 +105,7 @@
     <value>https://your-masjid.org</value>
   </data>
   <data name="AddMasjid_UrlSubtitle" xml:space="preserve">
-    <value>Paste the URL of the WordPress site running the Masjid API plugin, or scan the QR code provided by the masjid administrator.</value>
+    <value>Enter the URL of your masjid's website or scan the QR code provided by the masjid administrator.</value>
   </data>
   <data name="AddMasjid_Connect_Button" xml:space="preserve">
     <value>Connect</value>

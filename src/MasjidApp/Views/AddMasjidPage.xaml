@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
     x:DataType="vm:AddMasjidViewModel"
     Title="{Binding Title}">
 
@@ -11,17 +12,17 @@
         <VerticalStackLayout Padding="24" Spacing="16">
 
             <Label
-                Text="Enter the masjid's website URL"
+                Text="{l:Localize AddMasjid_UrlLabel}"
                 Style="{StaticResource TextSubhead}"
                 SemanticProperties.HeadingLevel="Level2" />
 
             <Label
-                Text="Paste the URL of the WordPress site running the Masjid API plugin, or scan the QR code provided by the masjid administrator."
+                Text="{l:Localize AddMasjid_UrlSubtitle}"
                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
 
             <!-- URL entry -->
             <Entry
-                Placeholder="https://your-masjid.org"
+                Placeholder="{l:Localize AddMasjid_UrlHint}"
                 Text="{Binding Url}"
                 Keyboard="Url"
                 IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
@@ -30,7 +31,7 @@
 
             <!-- Add by URL button -->
             <Button
-                Text="Connect"
+                Text="{l:Localize AddMasjid_Connect_Button}"
                 Command="{Binding AddByUrlCommand}"
                 IsEnabled="{Binding IsValidating, Converter={StaticResource InvertBoolConverter}}"
                 AutomationId="ConnectButton"
@@ -54,18 +55,18 @@
                 Margin="0,8" />
 
             <Label
-                Text="Scan QR Code"
+                Text="{l:Localize AddMasjid_ScanQr_Title}"
                 Style="{StaticResource TextSubheadStrong}"
                 SemanticProperties.HeadingLevel="Level2" />
 
             <Label
-                Text="Point your camera at the masjid's QR code to fill in the URL automatically."
+                Text="{l:Localize AddMasjid_ScanQr_Subtitle}"
                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
 
             <!-- Placeholder for QR scanner (wired up in code-behind when camera permission granted) -->
             <Button
                 x:Name="ScanQrButton"
-                Text="Scan QR Code"
+                Text="{l:Localize AddMasjid_ScanQr_Button}"
                 Clicked="OnScanQrClicked"
                 AutomationId="ScanQrButton"
                 SemanticProperties.Description="Open camera to scan QR code" />
