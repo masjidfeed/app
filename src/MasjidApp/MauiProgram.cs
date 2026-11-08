@@ -12,6 +12,7 @@ using MasjidApp.Core.Widgets;
 using MasjidApp.Controls;
 using MasjidApp.Notifications;
 using MasjidApp.Observability;
+using MasjidApp.PlatformPermissions;
 using MasjidApp.Push;
 using MasjidApp.Services;
 using MasjidApp.ViewModels;
@@ -243,6 +244,7 @@ public static class MauiProgram
         services.AddSingleton<IDeliveredNotificationService, DeliveredNotificationService>();
         services.AddSingleton<IPushNotificationCoordinator, PushNotificationCoordinator>();
         services.AddSingleton<IPushNotificationSettingsService, PushNotificationSettingsService>();
+        services.AddSingleton<IDeviceNotificationSettings, DeviceNotificationSettings>();
 
         // ── Batch B2: Events ─────────────────────────────────────────────────────
         services.AddSingleton<IEventsService, EventsService>();

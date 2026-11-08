@@ -6,6 +6,7 @@ using MasjidApp.Core.Http;
 using MasjidApp.Core.Models;
 using MasjidApp.Core.Serialization;
 using MasjidApp.Core.Services;
+using MasjidApp.Services;
 
 namespace MasjidApp.ViewModels;
 
@@ -21,6 +22,8 @@ public sealed partial class AddMasjidViewModel : ViewModelBase
 {
     private readonly IMasjidApiClient _api;
     private readonly IMasjidContext _context;
+    private readonly IPushNotificationSettingsService _pushNotificationSettings;
+    private readonly INavigationService _navigation;
 
     /// <summary>The URL the user typed (or decoded from QR).</summary>
     [ObservableProperty]
@@ -40,10 +43,16 @@ public sealed partial class AddMasjidViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showUnsupportedWebsite;
 
-    public AddMasjidViewModel(IMasjidApiClient api, IMasjidContext context)
+    public AddMasjidViewModel(
+        IMasjidApiClient api,
+        IMasjidContext context,
+        IPushNotificationSettingsService pushNotificationSettings,
+        INavigationService navigation)
     {
         _api = api;
         _context = context;
+        _pushNotificationSettings = pushNotificationSettings;
+        _navigation = navigation;
         Title = "Add Masjid";
     }
 
@@ -115,10 +124,37 @@ public sealed partial class AddMasjidViewModel : ViewModelBase
             _context.SetActive(entry);
             StatusMessage = $"'{entry.Name}' added successfully.";
             Url = string.Empty;
+            await NavigateToSettingsIfNotificationsDisabledAsync(config, ct);
         }
         finally
         {
             IsValidating = false;
+        }
+    }
+
+    /// <summary>
+    /// When the masjid's config enables announcement notifications but device
+    /// notifications are disabled, navigates to Settings where the user is
+    /// prompted to enable them.
+    /// </summary>
+    private async Task NavigateToSettingsIfNotificationsDisabledAsync(
+        MasjidConfig config,
+        CancellationToken ct)
+    {
+        if (config.FeatureFlags?.Announcements != true ||
+            await _pushNotificationSettings.IsDeviceNotificationsEnabledAsync(ct))
+        {
+            return;
+        }
+
+        try
+        {
+            await _navigation.GoToAsync(Routes.Settings);
+        }
+        catch (InvalidOperationException)
+        {
+            // No Shell is available yet (e.g. the mandatory first-run setup page is
+            // the window root); the user can enable notifications from Settings later.
         }
     }
 

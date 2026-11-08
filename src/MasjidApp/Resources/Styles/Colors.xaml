@@ -34,6 +34,14 @@
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
 
+    <!-- Switch off-track grays sampled from the native iOS 26 UISwitch over the
+         row backgrounds used in this app (white in light mode, Gray950 in dark).
+         MAUI 10 repaints the switch track with SecondarySystemFill after the first
+         toggle when OffColor is unset, which shifted the off-track color; pinning
+         OffColor to these values keeps the track identical before and after toggling. -->
+    <Color x:Key="SwitchOffTrackLight">#C5C5C7</Color>
+    <Color x:Key="SwitchOffTrackDark">#545457</Color>
+
     <Color x:Key="EventAlertBackground">#FFF4CC</Color>
     <Color x:Key="EventAlertBackgroundDark">#4D3500</Color>
     <Color x:Key="EventAlertBorder">#D39E00</Color>

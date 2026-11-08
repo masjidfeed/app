@@ -1,70 +1,131 @@
 using MasjidApp.Push;
+using MasjidApp.PlatformPermissions;
 using Microsoft.Maui.ApplicationModel;
 using Plugin.LocalNotification;
 
 namespace MasjidApp.Services;
 
-/// <summary>Persists remote push consent and coordinates platform permission with FCM registration.</summary>
+/// <summary>
+/// Persists remote push notification state (disabled / enabled / enabled-but-failed)
+/// and coordinates the OS notification permission with FCM registration.
+/// </summary>
 public sealed class PushNotificationSettingsService : IPushNotificationSettingsService
 {
-    internal const string EnabledKey = "settings_push_notifications";
+    internal const string StateKey = "settings_push_notifications_state";
 
     private readonly IUserPreferences _preferences;
     private readonly INotificationService _notifications;
     private readonly IPushNotificationCoordinator _coordinator;
+    private readonly IDeviceNotificationSettings _deviceSettings;
 
     /// <summary>Creates the remote push settings service.</summary>
     public PushNotificationSettingsService(
         IUserPreferences preferences,
         INotificationService notifications,
-        IPushNotificationCoordinator coordinator)
+        IPushNotificationCoordinator coordinator,
+        IDeviceNotificationSettings deviceSettings)
     {
         _preferences = preferences;
         _notifications = notifications;
         _coordinator = coordinator;
+        _deviceSettings = deviceSettings;
     }
 
     /// <inheritdoc />
-    public bool IsEnabled => _preferences.GetValue(EnabledKey, false);
+    public PushNotificationState State =>
+        (PushNotificationState)_preferences.GetValue(StateKey, (int)PushNotificationState.Disabled);
 
     /// <inheritdoc />
-    public async Task<bool> RefreshAsync(CancellationToken ct = default)
+    public async Task<bool> IsDeviceNotificationsEnabledAsync(CancellationToken ct = default)
     {
-        if (!IsEnabled)
+        try
         {
-            await _coordinator.SyncAsync(enabled: false, ct).ConfigureAwait(false);
+            return await _notifications.AreNotificationsEnabled().ConfigureAwait(false);
+        }
+        catch
+        {
             return false;
         }
-
-        var allowed = await _notifications.AreNotificationsEnabled().ConfigureAwait(false);
-        if (!allowed)
-        {
-            _preferences.SetValue(EnabledKey, false);
-        }
-
-        await _coordinator.SyncAsync(allowed, ct).ConfigureAwait(false);
-        return allowed;
     }
 
     /// <inheritdoc />
-    public async Task<bool> EnableAsync(CancellationToken ct = default)
+    public async Task<PushNotificationState> RefreshAsync(CancellationToken ct = default)
     {
-        var allowed = await _notifications.AreNotificationsEnabled().ConfigureAwait(false);
-        if (!allowed)
+        var state = State;
+        if (state == PushNotificationState.Disabled)
         {
-            allowed = await MainThread.InvokeOnMainThreadAsync(
-                () => _notifications.RequestNotificationPermission());
+            await _coordinator.SyncAsync(enabled: false, ct: ct).ConfigureAwait(false);
+            return PushNotificationState.Disabled;
         }
 
-        _preferences.SetValue(EnabledKey, allowed);
-        await _coordinator.SyncAsync(allowed, ct).ConfigureAwait(false);
-        return allowed;
+        var allowed = await IsDeviceNotificationsEnabledAsync(ct).ConfigureAwait(false);
+        if (!allowed)
+        {
+            // The OS revoked notifications; the app-level opt-in cannot be honored.
+            SetState(PushNotificationState.Disabled);
+            await _coordinator.SyncAsync(enabled: false, ct: ct).ConfigureAwait(false);
+            return PushNotificationState.Disabled;
+        }
+
+        if (state == PushNotificationState.EnabledButFailed)
+        {
+            // The user may have enabled notifications at the OS level and returned;
+            // retry the registration before settling on the final state.
+            return await RetryRegistrationAsync(ct).ConfigureAwait(false);
+        }
+
+        await _coordinator.SyncAsync(enabled: true, ct: ct).ConfigureAwait(false);
+        return state;
+    }
+
+    /// <inheritdoc />
+    public async Task<PushNotificationState> EnableAsync(CancellationToken ct = default)
+    {
+        var allowed = await IsDeviceNotificationsEnabledAsync(ct).ConfigureAwait(false);
+
+        // Attempt the registration POST regardless of the OS permission so the
+        // backend is ready as soon as notifications are turned on at the OS level.
+        var registered = await _coordinator
+            .SyncAsync(enabled: true, forceReRegister: true, ct: ct)
+            .ConfigureAwait(false);
+
+        if (!allowed)
+        {
+            // Device notifications are off: keep the toggle on and send the user
+            // to the OS page where notifications can be enabled.
+            SetState(PushNotificationState.EnabledButFailed);
+            await MainThread.InvokeOnMainThreadAsync(() => _deviceSettings.OpenAsync())
+                .ConfigureAwait(false);
+            return PushNotificationState.EnabledButFailed;
+        }
+
+        var newState = registered
+            ? PushNotificationState.Enabled
+            : PushNotificationState.EnabledButFailed;
+        SetState(newState);
+        return newState;
+    }
+
+    /// <inheritdoc />
+    public async Task<PushNotificationState> RetryRegistrationAsync(CancellationToken ct = default)
+    {
+        var registered = await _coordinator
+            .SyncAsync(enabled: true, forceReRegister: true, ct: ct)
+            .ConfigureAwait(false);
+        var newState = registered
+            ? PushNotificationState.Enabled
+            : PushNotificationState.EnabledButFailed;
+        SetState(newState);
+        return newState;
     }
 
     /// <inheritdoc />
     public async Task DisableAsync(CancellationToken ct = default)
     {
-        _preferences.SetValue(EnabledKey, false);
-        await _coordinator.SyncAsync(enabled: false, ct).ConfigureAwait(false);
+        SetState(PushNotificationState.Disabled);
+        await _coordinator.SyncAsync(enabled: false, ct: ct).ConfigureAwait(false);
     }
+
+    private void SetState(PushNotificationState state) =>
+        _preferences.SetValue(StateKey, (int)state);
 }

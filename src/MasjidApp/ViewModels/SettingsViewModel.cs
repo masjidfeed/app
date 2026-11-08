@@ -91,17 +91,34 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public bool CanChangePrayerReminderLeadTime =>
         PrayerRemindersEnabled && !IsUpdatingPrayerReminders;
 
-    /// <summary>Whether remote push is enabled by the user.</summary>
+    /// <summary>Whether remote push is enabled by the user (including the failed state).</summary>
     [ObservableProperty]
     private bool _pushNotificationsEnabled;
+
+    /// <summary>The persisted remote push notification state on this device.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanRetryPushRegistration))]
+    private PushNotificationState _pushNotificationState = PushNotificationState.Disabled;
+
+    /// <summary>Whether the announcements feature is enabled for the active masjid.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanChangePushNotifications))]
+    private bool _announcementsFeatureEnabled = true;
 
     /// <summary>Whether the remote push action is in progress.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanChangePushNotifications))]
+    [NotifyPropertyChangedFor(nameof(CanRetryPushRegistration))]
     private bool _isUpdatingPushNotifications;
 
     /// <summary>Whether the remote push action can currently be selected.</summary>
-    public bool CanChangePushNotifications => !IsUpdatingPushNotifications;
+    public bool CanChangePushNotifications =>
+        AnnouncementsFeatureEnabled && !IsUpdatingPushNotifications;
+
+    /// <summary>Whether the registration retry button should be shown.</summary>
+    public bool CanRetryPushRegistration =>
+        PushNotificationState == PushNotificationState.EnabledButFailed &&
+        !IsUpdatingPushNotifications;
 
     /// <summary>Non-blocking status for remote push permission.</summary>
     [ObservableProperty]
@@ -145,7 +162,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _selectedTheme = (ThemePreference)_preferences.GetValue(ThemeKey, (int)_themeService.Current);
         _is24HourTime = _preferences.GetValue(TimeFormatKey, false);
         _prayerRemindersEnabled = _prayerReminderSettings.IsEnabled;
-        _pushNotificationsEnabled = _pushNotificationSettings.IsEnabled;
+        _pushNotificationsEnabled = _pushNotificationSettings.State != PushNotificationState.Disabled;
+        _pushNotificationState = _pushNotificationSettings.State;
         _selectedPrayerReminderLeadTimeIndex = FindLeadTimeIndex(_prayerReminderSettings.MinutesBefore);
 
         _activeMasjidName = _masjidContext.ActiveEntry?.Name ?? "None";
@@ -217,7 +235,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Refreshes remote push consent and platform permission state.</summary>
     public async Task RefreshPushNotificationSettingsAsync(CancellationToken ct = default)
     {
-        PushNotificationsEnabled = await _pushNotificationSettings.RefreshAsync(ct);
+        PushNotificationState = await _pushNotificationSettings.RefreshAsync(ct);
+        PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
+        AnnouncementsFeatureEnabled = await IsAnnouncementsFeatureEnabledAsync(ct);
+        PushNotificationStatus = PushNotificationState == PushNotificationState.EnabledButFailed
+            ? Localize("Settings_PushNotifications_Status_RegistrationFailed")
+            : string.Empty;
     }
 
     /// <summary>Applies the requested remote announcement notification state.</summary>
@@ -237,21 +260,63 @@ public sealed partial class SettingsViewModel : ViewModelBase
             if (!enabled)
             {
                 await _pushNotificationSettings.DisableAsync(ct);
+                PushNotificationState = PushNotificationState.Disabled;
                 PushNotificationsEnabled = false;
             }
             else
             {
-                PushNotificationsEnabled = await _pushNotificationSettings.EnableAsync(ct);
-                if (!PushNotificationsEnabled)
+                PushNotificationState = await _pushNotificationSettings.EnableAsync(ct);
+                PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
+                PushNotificationStatus = PushNotificationState switch
                 {
-                    PushNotificationStatus = Localize("Settings_PushNotifications_Status_Denied");
-                }
+                    PushNotificationState.EnabledButFailed when !await _pushNotificationSettings
+                        .IsDeviceNotificationsEnabledAsync(ct) =>
+                        Localize("Settings_PushNotifications_Status_EnableNotifications"),
+                    PushNotificationState.EnabledButFailed =>
+                        Localize("Settings_PushNotifications_Status_RegistrationFailed"),
+                    _ => string.Empty,
+                };
             }
         }
         finally
         {
             IsUpdatingPushNotifications = false;
         }
+    }
+
+    /// <summary>
+    /// Retries the remote push registration after a failure. When the POST succeeds
+    /// the state becomes Enabled and the retry button area is hidden.
+    /// </summary>
+    [RelayCommand]
+    private async Task RetryPushRegistrationAsync(CancellationToken ct = default)
+    {
+        if (IsUpdatingPushNotifications ||
+            PushNotificationState != PushNotificationState.EnabledButFailed)
+        {
+            return;
+        }
+
+        IsUpdatingPushNotifications = true;
+        PushNotificationStatus = string.Empty;
+        try
+        {
+            PushNotificationState = await _pushNotificationSettings.RetryRegistrationAsync(ct);
+            PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
+            PushNotificationStatus = PushNotificationState == PushNotificationState.EnabledButFailed
+                ? Localize("Settings_PushNotifications_Status_RegistrationFailed")
+                : string.Empty;
+        }
+        finally
+        {
+            IsUpdatingPushNotifications = false;
+        }
+    }
+
+    private async Task<bool> IsAnnouncementsFeatureEnabledAsync(CancellationToken ct)
+    {
+        var config = (await _masjidContext.GetConfigAsync(ct: ct))?.ValueOrDefault;
+        return config?.FeatureFlags?.Announcements ?? false;
     }
 
     /// <summary>Persists and applies the current reminder toggle and iqama lead time.</summary>

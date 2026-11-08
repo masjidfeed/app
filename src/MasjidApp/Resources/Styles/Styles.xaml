@@ -424,6 +424,10 @@
 
     <Style TargetType="Switch">
         <Setter Property="OnColor" Value="{DynamicResource ActivePrimaryColor}" />
+        <!-- OffColor must match the native off-track (see SwitchOffTrack* in Colors.xaml):
+             without it MAUI paints the track SecondarySystemFill on the first toggle,
+             making toggled-off switches lighter than never-toggled ones. -->
+        <Setter Property="OffColor" Value="{AppThemeBinding Light={StaticResource SwitchOffTrackLight}, Dark={StaticResource SwitchOffTrackDark}}" />
         <Setter Property="ThumbColor" Value="{StaticResource White}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
@@ -441,11 +445,10 @@
                             <Setter Property="ThumbColor" Value="{StaticResource White}" />
                         </VisualState.Setters>
                     </VisualState>
-                    <VisualState x:Name="Off">
-                        <VisualState.Setters>
-                            <Setter Property="ThumbColor" Value="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}" />
-                        </VisualState.Setters>
-                    </VisualState>
+                    <!-- Off thumb stays White (style default); MAUI only applies Off-state
+                         setters after the first toggle, so overriding here would make the
+                         thumb turn gray for any switch the user has toggled. -->
+                    <VisualState x:Name="Off" />
                 </VisualStateGroup>
             </VisualStateGroupList>
         </Setter>

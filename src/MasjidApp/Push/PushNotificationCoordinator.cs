@@ -72,10 +72,14 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     }
 
     /// <inheritdoc />
-    public async Task SyncAsync(bool enabled, CancellationToken ct = default)
+    public async Task<bool> SyncAsync(
+        bool enabled,
+        bool forceReRegister = false,
+        CancellationToken ct = default)
     {
 #if !(IOS || ANDROID)
         await Task.CompletedTask;
+        return true;
 #else
         await _syncLock.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -96,7 +100,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             {
                 if (!await UnregisterAsync(saved, ct).ConfigureAwait(false))
                 {
-                    return;
+                    return false;
                 }
 
                 SecureStorage.Default.Remove(RegistrationStateKey);
@@ -106,18 +110,18 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
             if (!canRegister || push?.Firebase is null)
             {
-                return;
+                return true;
             }
 
             await EnsureFirebaseAsync(push.Firebase).ConfigureAwait(false);
             await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
             var token = await _messaging.GetTokenAsync().ConfigureAwait(false);
-            await RegisterAsync(
+            return await RegisterAsync(
                 masjidId!,
                 push.RegistrationUrl!,
                 push.Firebase,
                 token,
-                saved?.Token,
+                forceReRegister ? null : saved?.Token,
                 ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -127,6 +131,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         catch (Exception ex)
         {
             LogPushSyncFailed(_logger, ex);
+            return false;
         }
         finally
         {
@@ -374,7 +379,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         _initializedAppId = null;
     }
 
-    private async Task RegisterAsync(
+    private async Task<bool> RegisterAsync(
         string masjidId,
         string registrationUrl,
         FirebaseConfig firebase,
@@ -384,22 +389,35 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     {
         if (string.Equals(token, previousToken, StringComparison.Ordinal))
         {
-            return;
+            return true;
         }
 
-        var request = new PushRegistrationRequest(masjidId, PlatformName, token, previousToken);
-        using var message = new HttpRequestMessage(HttpMethod.Post, registrationUrl)
+        try
         {
-            Content = JsonContent.Create(request, PushJsonContext.Default.PushRegistrationRequest),
-        };
-        FirebaseAppCheckHeader.Add(
-            message,
-            await CrossFirebaseAppCheck.GetTokenAsync().ConfigureAwait(false));
-        using var response = await _http.SendAsync(message, ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+            var request = new PushRegistrationRequest(masjidId, PlatformName, token, previousToken);
+            using var message = new HttpRequestMessage(HttpMethod.Post, registrationUrl)
+            {
+                Content = JsonContent.Create(request, PushJsonContext.Default.PushRegistrationRequest),
+            };
+            FirebaseAppCheckHeader.Add(
+                message,
+                await CrossFirebaseAppCheck.GetTokenAsync().ConfigureAwait(false));
+            using var response = await _http.SendAsync(message, ct).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
 
-        await SaveStateAsync(new PushRegistrationState(masjidId, registrationUrl, token, firebase))
-            .ConfigureAwait(false);
+            await SaveStateAsync(new PushRegistrationState(masjidId, registrationUrl, token, firebase))
+                .ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            LogPushRegisterFailed(_logger, ex);
+            return false;
+        }
     }
 
     private async Task<bool> UnregisterAsync(PushRegistrationState state, CancellationToken ct)
@@ -500,7 +518,10 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 #endif
 
     private void OnActiveMasjidChanged(object? sender, EventArgs e) =>
-        _ = SyncAsync(_preferences.GetValue(PushNotificationSettingsService.EnabledKey, false));
+        _ = SyncAsync(
+            _preferences.GetValue(
+                PushNotificationSettingsService.StateKey,
+                (int)PushNotificationState.Disabled) != (int)PushNotificationState.Disabled);
 
     public void Dispose()
     {
@@ -518,6 +539,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push synchronization failed.")]
     private static partial void LogPushSyncFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push registration failed.")]
+    private static partial void LogPushRegisterFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push could not be unregistered from the previous tenant.")]
     private static partial void LogPushUnregisterFailed(ILogger logger, Exception exception);
