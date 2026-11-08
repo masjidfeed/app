@@ -37,6 +37,7 @@ public sealed class MasjidConfigTests
             "website": "https://example.org"
           },
           "donationUrl": "https://example.org/donate",
+          "ramadanUrl": "https://example.org/ramadan",
           "social": {
             "facebook": "https://facebook.com/example",
             "instagram": "https://instagram.com/example",
@@ -47,7 +48,8 @@ public sealed class MasjidConfigTests
             "announcements": true,
             "donations": true,
             "qibla": true,
-            "prayerReminders": true
+            "prayerReminders": true,
+            "ramadan": true
           }
         }
         """;
@@ -84,6 +86,9 @@ public sealed class MasjidConfigTests
         // Donation URL
         config.DonationUrl.Should().Be("https://example.org/donate");
 
+        // Ramadan URL
+        config.RamadanUrl.Should().Be("https://example.org/ramadan");
+
         // Social
         config.Social.Should().NotBeNull();
         config.Social!.Facebook.Should().Contain("facebook.com");
@@ -96,6 +101,7 @@ public sealed class MasjidConfigTests
         config.FeatureFlags.Donations.Should().BeTrue();
         config.FeatureFlags.Qibla.Should().BeTrue();
         config.FeatureFlags.PrayerReminders.Should().BeTrue();
+        config.FeatureFlags.Ramadan.Should().BeTrue();
     }
 
     [Fact]
@@ -151,5 +157,6 @@ public sealed class MasjidConfigTests
 
         config!.FeatureFlags!.Events.Should().BeFalse();
         config.FeatureFlags.Donations.Should().BeFalse();
+        config.FeatureFlags.Ramadan.Should().BeFalse();
     }
 }

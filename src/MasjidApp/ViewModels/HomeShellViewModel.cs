@@ -26,6 +26,9 @@ public enum HomeShellCategory
     /// <summary>Announcements and next-prayer summary.</summary>
     Announcements,
 
+    /// <summary>Ramadan programs webpage (API-06 ramadan feature flag).</summary>
+    Ramadan,
+
     /// <summary>Upcoming event preview.</summary>
     Events,
 
@@ -95,6 +98,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTodaySelected))]
+    [NotifyPropertyChangedFor(nameof(IsRamadanSelected))]
     [NotifyPropertyChangedFor(nameof(IsEventsSelected))]
     [NotifyPropertyChangedFor(nameof(IsAboutSelected))]
     private int _selectedCategoryIndex;
@@ -108,11 +112,42 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     /// <summary><c>true</c> when the "Today" category is active.</summary>
     public bool IsTodaySelected => SelectedCategory == HomeShellCategory.Announcements;
 
+    /// <summary><c>true</c> when the "Ramadan" category is active.</summary>
+    public bool IsRamadanSelected => SelectedCategory == HomeShellCategory.Ramadan;
+
     /// <summary><c>true</c> when the "Events" category is active.</summary>
     public bool IsEventsSelected => SelectedCategory == HomeShellCategory.Events;
 
     /// <summary><c>true</c> when the "About" category is active.</summary>
     public bool IsAboutSelected => SelectedCategory == HomeShellCategory.About;
+
+    /// <summary>Zero-based strip index of the Announcements category, or -1 when hidden.</summary>
+    public int AnnouncementsIndex => IndexOfCategory(HomeShellCategory.Announcements);
+
+    /// <summary>Zero-based strip index of the Ramadan category, or -1 when hidden.</summary>
+    public int RamadanIndex => IndexOfCategory(HomeShellCategory.Ramadan);
+
+    /// <summary>Zero-based strip index of the Events category, or -1 when hidden.</summary>
+    public int EventsIndex => IndexOfCategory(HomeShellCategory.Events);
+
+    /// <summary>Zero-based strip index of the About category, or -1 when hidden.</summary>
+    public int AboutIndex => IndexOfCategory(HomeShellCategory.About);
+
+    private int IndexOfCategory(HomeShellCategory category)
+    {
+        var index = 0;
+        foreach (var page in CategoryPages)
+        {
+            if (page.Category == category)
+            {
+                return index;
+            }
+
+            index++;
+        }
+
+        return -1;
+    }
 
     /// <summary>About sub-ViewModel hosted inline in the "About" category (FR-ST-05, FR-CM-02, FR-CM-04).</summary>
     public AboutViewModel About { get; }
@@ -127,6 +162,13 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     /// <summary>Whether the events feature is enabled for the active masjid (API-06).</summary>
     [ObservableProperty]
     private bool _isEventsEnabled = true;
+
+    /// <summary>Whether the Ramadan feature is enabled for the active masjid (API-06).</summary>
+    [ObservableProperty]
+    private bool _isRamadanEnabled;
+
+    /// <summary>Ramadan sub-ViewModel hosted inline in the "Ramadan" category (API-06).</summary>
+    public RamadanViewModel Ramadan { get; }
 
     private readonly IReadOnlyList<HomeShellCategoryPage> _allCategoryPages;
 
@@ -174,6 +216,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         INotificationInboxService notificationInbox,
         IDeliveredNotificationService deliveredNotifications,
         AboutViewModel about,
+        RamadanViewModel ramadan,
         ILogger<HomeShellViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(prayerTimesProvider);
@@ -188,6 +231,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(notificationInbox);
         ArgumentNullException.ThrowIfNull(deliveredNotifications);
         ArgumentNullException.ThrowIfNull(about);
+        ArgumentNullException.ThrowIfNull(ramadan);
         ArgumentNullException.ThrowIfNull(logger);
 
         _prayerTimesProvider = prayerTimesProvider;
@@ -203,9 +247,11 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         _deliveredNotifications = deliveredNotifications;
         _logger = logger;
         About = about;
+        Ramadan = ramadan;
         _allCategoryPages =
         [
             new(HomeShellCategory.Announcements, this),
+            new(HomeShellCategory.Ramadan, this),
             new(HomeShellCategory.Events, this),
             new(HomeShellCategory.About, this),
         ];
@@ -521,11 +567,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     partial void OnSelectedCategoryIndexChanged(int value)
     {
-        // Lazily load About content when the category gains focus (API-06, API-10).
-        if (SelectedCategory == HomeShellCategory.About && About.LoadCommand.CanExecute(null))
-        {
-            About.LoadCommand.Execute(null);
-        }
+        // Lazily load About/Ramadan content when the category gains focus (API-06, API-10).
+        EnsureLazilyLoadedContent(SelectedCategory);
     }
 
     /// <summary>
@@ -539,14 +582,18 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     {
         var announcementsEnabled = config.FeatureFlags?.Announcements == true;
         var eventsEnabled = config.FeatureFlags?.Events == true;
+        var ramadanEnabled = config.FeatureFlags?.Ramadan == true &&
+            !string.IsNullOrWhiteSpace(config.RamadanUrl);
 
         IsAnnouncementsEnabled = announcementsEnabled;
         IsEventsEnabled = eventsEnabled;
+        IsRamadanEnabled = ramadanEnabled;
 
         var visible = _allCategoryPages
             .Where(page => page.Category switch
             {
                 HomeShellCategory.Announcements => announcementsEnabled,
+                HomeShellCategory.Ramadan => ramadanEnabled,
                 HomeShellCategory.Events => eventsEnabled,
                 _ => true,
             })
@@ -573,14 +620,30 @@ public sealed partial class HomeShellViewModel : ViewModelBase
             // rebuild, so re-assert the strip highlights (MVVM toolkit skips setters
             // that do not change the stored index).
             OnPropertyChanged(nameof(IsTodaySelected));
+            OnPropertyChanged(nameof(IsRamadanSelected));
             OnPropertyChanged(nameof(IsEventsSelected));
             OnPropertyChanged(nameof(IsAboutSelected));
+            OnPropertyChanged(nameof(AnnouncementsIndex));
+            OnPropertyChanged(nameof(RamadanIndex));
+            OnPropertyChanged(nameof(EventsIndex));
+            OnPropertyChanged(nameof(AboutIndex));
         }
 
-        // The clamp above can land on About without changing the stored index.
-        if (SelectedCategory == HomeShellCategory.About && About.LoadCommand.CanExecute(null))
+        // The clamp above can land on About or Ramadan without changing the stored index.
+        EnsureLazilyLoadedContent(SelectedCategory);
+    }
+
+    /// <summary>Lazily loads inline sub-content when its category gains focus (API-06, API-10).</summary>
+    private void EnsureLazilyLoadedContent(HomeShellCategory? category)
+    {
+        if (category == HomeShellCategory.About && About.LoadCommand.CanExecute(null))
         {
             About.LoadCommand.Execute(null);
+        }
+
+        if (category == HomeShellCategory.Ramadan && Ramadan.LoadCommand.CanExecute(null))
+        {
+            Ramadan.LoadCommand.Execute(null);
         }
     }
 

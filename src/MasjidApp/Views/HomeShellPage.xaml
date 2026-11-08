@@ -196,6 +196,10 @@
                 </Grid>
             </DataTemplate>
 
+            <DataTemplate x:Key="RamadanTabTemplate" x:DataType="vm:HomeShellCategoryPage">
+                <views:RamadanSectionView BindingContext="{Binding Shell.Ramadan}" />
+            </DataTemplate>
+
             <DataTemplate x:Key="EventsTabTemplate" x:DataType="vm:HomeShellCategoryPage">
                 <Grid
                     RowDefinitions="*,Auto">
@@ -769,6 +773,7 @@
             <views:HomeShellTabTemplateSelector
                 x:Key="HomeShellTabTemplateSelector"
                 AnnouncementsTemplate="{StaticResource AnnouncementsTabTemplate}"
+                RamadanTemplate="{StaticResource RamadanTabTemplate}"
                 EventsTemplate="{StaticResource EventsTabTemplate}"
                 AboutTemplate="{StaticResource AboutTabTemplate}" />
         </ResourceDictionary>
@@ -911,7 +916,7 @@
                                     <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
                                 </DataTrigger>
                             </Label.Triggers>
-                            <Label.GestureRecognizers>
+                                <Label.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
                                     <TapGestureRecognizer.CommandParameter>
                                         <x:Int32>0</x:Int32>
@@ -923,6 +928,27 @@
                             HeightRequest="2"
                             BackgroundColor="{DynamicResource ActivePrimaryColor}"
                             IsVisible="{Binding IsTodaySelected}" />
+                    </VerticalStackLayout>
+
+                    <!-- Ramadan - hidden unless the ramadan flag and ramadanUrl are set (API-06) -->
+                    <VerticalStackLayout IsVisible="{Binding IsRamadanEnabled}">
+                        <Label
+                            Text="Ramadan"
+                            Style="{StaticResource CategoryLabelStyle}"
+                            SemanticProperties.Description="Ramadan category">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsRamadanSelected}" Value="True">
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}" CommandParameter="{Binding RamadanIndex}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                        <BoxView
+                            HeightRequest="2"
+                            BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                            IsVisible="{Binding IsRamadanSelected}" />
                     </VerticalStackLayout>
 
                     <!-- Events - hidden when the events flag is disabled (API-06) -->
@@ -937,11 +963,7 @@
                                 </DataTrigger>
                             </Label.Triggers>
                             <Label.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
-                                    <TapGestureRecognizer.CommandParameter>
-                                        <x:Int32>1</x:Int32>
-                                    </TapGestureRecognizer.CommandParameter>
-                                </TapGestureRecognizer>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}" CommandParameter="{Binding EventsIndex}" />
                             </Label.GestureRecognizers>
                         </Label>
                         <BoxView
@@ -962,11 +984,7 @@
                                 </DataTrigger>
                             </Label.Triggers>
                             <Label.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}">
-                                    <TapGestureRecognizer.CommandParameter>
-                                        <x:Int32>2</x:Int32>
-                                    </TapGestureRecognizer.CommandParameter>
-                                </TapGestureRecognizer>
+                                <TapGestureRecognizer Command="{Binding SelectCategoryCommand}" CommandParameter="{Binding AboutIndex}" />
                             </Label.GestureRecognizers>
                         </Label>
                         <BoxView

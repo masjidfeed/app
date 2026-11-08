@@ -426,6 +426,26 @@
     <value>You will be taken to a secure external website to complete your donation. No payment information is collected by this app.</value>
   </data>
 
+  <!-- ── Ramadan (API-06 ramadan feature flag) ─────────────────────────────── -->
+  <data name="Ramadan_Title" xml:space="preserve">
+    <value>Ramadan</value>
+  </data>
+  <data name="Ramadan_OpenBrowser_Button" xml:space="preserve">
+    <value>Open in Browser</value>
+  </data>
+  <data name="Ramadan_NoUrl" xml:space="preserve">
+    <value>No Ramadan page has been configured for this masjid.</value>
+  </data>
+  <data name="Ramadan_LoadError" xml:space="preserve">
+    <value>The Ramadan page could not be loaded.</value>
+  </data>
+  <data name="Ramadan_BrowserError_Title" xml:space="preserve">
+    <value>Unable to Open Browser</value>
+  </data>
+  <data name="Ramadan_BrowserError_Message" xml:space="preserve">
+    <value>The Ramadan page link could not be opened in the system browser.</value>
+  </data>
+
   <!-- ── Welcome / Onboarding (shown once, before masjid selection) ─────────── -->
   <data name="Welcome_Next_Button" xml:space="preserve">
     <value>Next</value>

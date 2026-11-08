@@ -31,6 +31,10 @@ public sealed record MasjidConfig
     [JsonPropertyName("donationUrl")]
     public string? DonationUrl { get; init; }
 
+    /// <summary>Optional URL shown in-app for Ramadan programs when the ramadan flag is enabled.</summary>
+    [JsonPropertyName("ramadanUrl")]
+    public string? RamadanUrl { get; init; }
+
     /// <summary>Optional social media links.</summary>
     [JsonPropertyName("social")]
     public SocialLinks? Social { get; init; }
@@ -193,4 +197,8 @@ public sealed record FeatureFlags
 
     [JsonPropertyName("prayerReminders")]
     public bool PrayerReminders { get; init; }
+
+    /// <summary>When <c>true</c> and <c>ramadanUrl</c> is present, show the Ramadan home category.</summary>
+    [JsonPropertyName("ramadan")]
+    public bool Ramadan { get; init; }
 }

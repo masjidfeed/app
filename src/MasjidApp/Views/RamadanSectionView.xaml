@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="MasjidApp.Views.RamadanSectionView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MasjidApp.Controls"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:RamadanViewModel">
+
+    <!-- API-06 ramadan feature flag: renders the masjid-provided HTTPS ramadanUrl
+         inline, mirroring the Donations page navigation policy. The ViewModel is
+         assigned by the Home shell template via BindingContext. -->
+
+    <Grid SafeAreaEdges="Container,Container,Container,None">
+        <Grid SafeAreaEdges="None">
+            <controls:RamadanWebView
+                x:Name="RamadanWebView"
+                Source="{Binding RamadanUrl}"
+                IsVisible="{Binding HasRamadanUrl}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                Navigating="OnRamadanWebViewNavigating"
+                Navigated="OnRamadanWebViewNavigated"
+                ProcessTerminated="OnRamadanWebViewProcessTerminated" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center" />
+
+            <ActivityIndicator
+                x:Name="RamadanLoadingIndicator"
+                IsRunning="False"
+                IsVisible="False"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                SemanticProperties.Description="{l:Localize App_Loading}" />
+
+            <Label
+                Margin="24"
+                Text="{l:Localize Ramadan_NoUrl}"
+                Style="{StaticResource TextBody}"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                VerticalOptions="Center"
+                IsVisible="{Binding ShowNoRamadanUrl}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                SemanticProperties.Description="{l:Localize Ramadan_NoUrl}" />
+
+            <Border
+                x:Name="RamadanErrorPanel"
+                Margin="24"
+                Padding="20"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 8"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                IsVisible="False">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="{l:Localize Ramadan_LoadError}"
+                        Style="{StaticResource TextBody}"
+                        HorizontalTextAlignment="Center"
+                        SemanticProperties.Description="{l:Localize Ramadan_LoadError}" />
+                    <Button
+                        Text="{l:Localize App_Retry}"
+                        Clicked="OnRetryClicked"
+                        Style="{StaticResource ButtonCompact}"
+                        HorizontalOptions="Center" />
+                    <Button
+                        Text="{l:Localize Ramadan_OpenBrowser_Button}"
+                        Command="{Binding OpenRamadanCommand}"
+                        Style="{StaticResource ButtonCompact}"
+                        HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+
+</ContentView>

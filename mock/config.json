@@ -22,6 +22,7 @@
     "website": "/"
   },
   "donationUrl": "https://bothellmosque.org/donate",
+  "ramadanUrl": "https://bothellmosque.org/ramadan",
   "social": {
     "facebook": "/facebook",
     "instagram": "/instagram",
@@ -32,7 +33,8 @@
     "announcements": true,
     "donations": true,
     "qibla": true,
-    "prayerReminders": true
+    "prayerReminders": true,
+    "ramadan": true
   },
   "pushNotifications": {
     "enabled": true,

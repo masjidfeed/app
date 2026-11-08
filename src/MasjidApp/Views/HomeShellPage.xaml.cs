@@ -6,8 +6,8 @@ namespace MasjidApp.Views;
 
 /// <summary>
 /// Home shell page - hosts the collapsing masjid logo header, the horizontal
-/// category strip ("Today", "Events", "Qibla"), and the swappable feed
-/// content below.  Code-behind stays thin; all logic lives in
+/// category strip ("Today", "Ramadan", "Events", "About"), and the swappable
+/// feed content below.  Code-behind stays thin; all logic lives in
 /// <see cref="HomeShellViewModel"/>.
 /// </summary>
 public partial class HomeShellPage : ContentPage, IAppLifecycleAware

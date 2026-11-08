@@ -68,7 +68,7 @@ public static class MauiProgram
             nameof(DonationWebView),
             static (handler, view) =>
             {
-                if (view is DonationWebView)
+                if (view is DonationWebView or RamadanWebView)
                 {
                     handler.PlatformView.Settings.SetSupportMultipleWindows(false);
                 }
@@ -275,6 +275,9 @@ public static class MauiProgram
         services.AddTransient<QiblaViewModel>();
         services.AddSingleton<AboutViewModel>();
         services.AddTransient<DonationsViewModel>();
+        // Ramadan home category (API-06 ramadan feature flag): one instance shared
+        // with the Home shell so the strip and inline webpage stay in sync.
+        services.AddSingleton<RamadanViewModel>();
 
         // ── Batch A4 ──────────────────────────────────────────────────────────
         services.AddTransient<PrayerTimesViewModel>();

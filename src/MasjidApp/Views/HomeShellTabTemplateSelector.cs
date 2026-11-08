@@ -10,6 +10,9 @@ public sealed class HomeShellTabTemplateSelector : DataTemplateSelector
     /// <summary>Template for the Announcements home page.</summary>
     public DataTemplate? AnnouncementsTemplate { get; set; }
 
+    /// <summary>Template for the Ramadan home page.</summary>
+    public DataTemplate? RamadanTemplate { get; set; }
+
     /// <summary>Template for the Events home page.</summary>
     public DataTemplate? EventsTemplate { get; set; }
 
@@ -22,6 +25,7 @@ public sealed class HomeShellTabTemplateSelector : DataTemplateSelector
         return item switch
         {
             HomeShellCategoryPage { Category: HomeShellCategory.Announcements } => AnnouncementsTemplate,
+            HomeShellCategoryPage { Category: HomeShellCategory.Ramadan } => RamadanTemplate,
             HomeShellCategoryPage { Category: HomeShellCategory.Events } => EventsTemplate,
             HomeShellCategoryPage { Category: HomeShellCategory.About } => AboutTemplate,
             _ => AnnouncementsTemplate,
