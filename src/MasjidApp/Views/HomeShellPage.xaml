@@ -392,6 +392,16 @@
                                 HorizontalOptions="Fill" />
                         </Border>
 
+                        <!-- API-06 parking feature flag: parking guide entry point. -->
+                        <Button
+                            Margin="16,16,16,0"
+                            Text="{l:Localize About_Parking_Button}"
+                            Command="{Binding Shell.About.OpenParkingCommand}"
+                            Style="{StaticResource ButtonCompact}"
+                            IsVisible="{Binding Shell.About.HasParking}"
+                            HorizontalOptions="Fill"
+                            SemanticProperties.Description="{l:Localize About_Parking_Button}" />
+
                         <VerticalStackLayout Margin="0,16,0,0" Spacing="8">
                             <Label
                                 Text="Contact"

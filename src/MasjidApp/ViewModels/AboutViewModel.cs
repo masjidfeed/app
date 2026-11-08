@@ -20,6 +20,7 @@ public sealed partial class AboutViewModel : ViewModelBase
     private readonly IMasjidContext _context;
     private readonly IContactActionService _contactActions;
     private readonly IMapLocationResolver _mapLocationResolver;
+    private readonly INavigationService _navigation;
 
     /// <summary>Masjid display name.</summary>
     [ObservableProperty]
@@ -44,6 +45,13 @@ public sealed partial class AboutViewModel : ViewModelBase
     /// <summary><c>true</c> when the active masjid address resolved to preview coordinates.</summary>
     [ObservableProperty]
     private bool _hasMapLocation;
+
+    /// <summary>
+    /// <c>true</c> when the parking feature flag is enabled and a parking URL is
+    /// configured (API-06); controls the Parking guide entry point.
+    /// </summary>
+    [ObservableProperty]
+    private bool _hasParking;
 
     /// <summary>Phone number.</summary>
     [ObservableProperty]
@@ -81,11 +89,13 @@ public sealed partial class AboutViewModel : ViewModelBase
     public AboutViewModel(
         IMasjidContext context,
         IContactActionService contactActions,
-        IMapLocationResolver mapLocationResolver)
+        IMapLocationResolver mapLocationResolver,
+        INavigationService navigation)
     {
         _context = context;
         _contactActions = contactActions;
         _mapLocationResolver = mapLocationResolver;
+        _navigation = navigation;
         Title = "About";
     }
 
@@ -100,6 +110,7 @@ public sealed partial class AboutViewModel : ViewModelBase
         try
         {
             HasMapLocation = false;
+            HasParking = false;
             MapLatitude = 0;
             MapLongitude = 0;
 
@@ -112,6 +123,11 @@ public sealed partial class AboutViewModel : ViewModelBase
             Address = config?.Contact?.Address ?? string.Empty;
             Phone = config?.Contact?.Phone ?? string.Empty;
             Email = config?.Contact?.Email ?? string.Empty;
+
+            // Parking guide entry point (API-06): show only when the parking
+            // feature flag is enabled and a parking endpoint URL is present.
+            HasParking = config?.FeatureFlags?.Parking == true &&
+                !string.IsNullOrWhiteSpace(config?.Endpoints?.ParkingUrl);
 
             // Website and social links may be relative paths in the config document
             // (e.g. "/" or "/facebook") - resolve them against the masjid origin
@@ -160,6 +176,10 @@ public sealed partial class AboutViewModel : ViewModelBase
     /// <summary>Opens the masjid website in the system browser (FR-CM-02).</summary>
     [RelayCommand]
     private Task OpenWebsiteAsync() => _contactActions.OpenBrowserAsync(Website);
+
+    /// <summary>Navigates to the parking guide page (API-06 parking feature flag).</summary>
+    [RelayCommand]
+    private Task OpenParkingAsync() => _navigation.GoToAsync(Routes.Parking);
 
     /// <summary>Opens the masjid Facebook page in the system browser (FR-CM-04).</summary>
     [RelayCommand]

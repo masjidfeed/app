@@ -13,7 +13,8 @@
   "endpoints": {
     "salahApiUrl": "/wp-json/masjid/v1/salahapi",
     "eventsUrl": "/wp-json/masjid/v1/events",
-    "announcementsUrl": "/wp-json/masjid/v1/announcements"
+    "announcementsUrl": "/wp-json/masjid/v1/announcements",
+    "parkingUrl": "/wp-json/masjid/v1/parking-config"
   },
   "contact": {
     "address": "10921 NE 191st St, Bothell, WA 98011, USA",
@@ -31,10 +32,12 @@
   "featureFlags": {
     "events": true,
     "announcements": true,
+    "pushNotifications": true,
     "donations": true,
     "qibla": true,
     "prayerReminders": true,
-    "ramadan": true
+    "ramadan": true,
+    "parking": true
   },
   "pushNotifications": {
     "enabled": true,

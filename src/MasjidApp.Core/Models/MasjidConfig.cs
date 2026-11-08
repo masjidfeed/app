@@ -145,6 +145,10 @@ public sealed record EndpointsConfig
 
     [JsonPropertyName("announcementsUrl")]
     public string? AnnouncementsUrl { get; init; }
+
+    /// <summary>URL of the parking map document served by <c>GET /parking-config</c>.</summary>
+    [JsonPropertyName("parkingUrl")]
+    public string? ParkingUrl { get; init; }
 }
 
 /// <summary>Masjid contact details (FR-CM-04).</summary>
@@ -188,6 +192,10 @@ public sealed record FeatureFlags
     [JsonPropertyName("announcements")]
     public bool Announcements { get; init; }
 
+    /// <summary>When <c>false</c>, hide the remote push notifications toggle and skip notification prompts.</summary>
+    [JsonPropertyName("pushNotifications")]
+    public bool PushNotifications { get; init; }
+
     /// <summary>When <c>false</c> or donation URL is absent, hide the donations entry (FR-DN-04).</summary>
     [JsonPropertyName("donations")]
     public bool Donations { get; init; }
@@ -201,4 +209,8 @@ public sealed record FeatureFlags
     /// <summary>When <c>true</c> and <c>ramadanUrl</c> is present, show the Ramadan home category.</summary>
     [JsonPropertyName("ramadan")]
     public bool Ramadan { get; init; }
+
+    /// <summary>When <c>true</c> and <c>parkingUrl</c> is present, show the parking guide entry point.</summary>
+    [JsonPropertyName("parking")]
+    public bool Parking { get; init; }
 }

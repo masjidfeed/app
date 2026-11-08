@@ -158,6 +158,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.AnnouncementDetail, typeof(PostDetailPage));
         Routing.RegisterRoute(Routes.ImagePreview, typeof(ImagePreviewPage));
         Routing.RegisterRoute(Routes.Contact, typeof(ContactPage));
+        Routing.RegisterRoute(Routes.Parking, typeof(ParkingPage));
     }
 
     // ─── Feature-flag tab visibility (API-06, FR-DN-04) ─────────────────────────

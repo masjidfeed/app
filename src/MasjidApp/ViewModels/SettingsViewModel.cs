@@ -108,10 +108,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanRetryPushRegistration))]
     private PushNotificationState _pushNotificationState = PushNotificationState.Disabled;
 
-    /// <summary>Whether the announcements feature is enabled for the active masjid.</summary>
+    /// <summary>Whether the push notifications feature is enabled for the active masjid (API-06).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanChangePushNotifications))]
-    private bool _announcementsFeatureEnabled = true;
+    private bool _pushNotificationsFeatureEnabled = true;
 
     /// <summary>Whether the remote push action is in progress.</summary>
     [ObservableProperty]
@@ -121,7 +121,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     /// <summary>Whether the remote push action can currently be selected.</summary>
     public bool CanChangePushNotifications =>
-        AnnouncementsFeatureEnabled && !IsUpdatingPushNotifications;
+        PushNotificationsFeatureEnabled && !IsUpdatingPushNotifications;
 
     /// <summary>Whether the registration retry button should be shown.</summary>
     public bool CanRetryPushRegistration =>
@@ -251,7 +251,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
 
         var config = (await _masjidContext.GetConfigAsync(ct: ct))?.ValueOrDefault;
-        AnnouncementsFeatureEnabled = config?.FeatureFlags?.Announcements ?? false;
+        PushNotificationsFeatureEnabled = config?.FeatureFlags?.PushNotifications ?? false;
         PrayerRemindersFeatureEnabled = config?.FeatureFlags?.PrayerReminders ?? false;
 
         PushNotificationStatus = PushNotificationState == PushNotificationState.EnabledButFailed

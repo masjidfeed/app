@@ -114,6 +114,7 @@ public static class EndpointUrlResolver
             SalahApiUrl = Resolve(endpoints.SalahApiUrl, configUrl),
             EventsUrl = Resolve(endpoints.EventsUrl, configUrl),
             AnnouncementsUrl = Resolve(endpoints.AnnouncementsUrl, configUrl),
+            ParkingUrl = Resolve(endpoints.ParkingUrl, configUrl),
         };
     }
 

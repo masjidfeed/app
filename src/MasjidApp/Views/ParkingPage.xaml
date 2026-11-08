@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.ParkingPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:l="clr-namespace:MasjidApp.Localization"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:ParkingViewModel"
+    Title="{Binding Title}">
+
+    <!-- API-06 parking feature flag: square rounded parking map with zone
+         overlays, a zone legend, and current-location validation. -->
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="{l:Localize Parking_LoadError}"
+                Style="{StaticResource TextBody}"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding ShowLoadError}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <!-- Square rounded map: the host Border clips the native map to the
+                 rounded corners and the 1:1 sizing comes from WidthRequest. -->
+            <Border
+                x:Name="MapRoot"
+                WidthRequest="352"
+                HeightRequest="352"
+                Padding="0"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}"
+                HorizontalOptions="Center"
+                IsVisible="{Binding IsNativeMapConfigured}">
+                <Grid>
+                    <Grid x:Name="MapHost" />
+                    <Label
+                        Margin="8"
+                        VerticalOptions="End"
+                        Style="{StaticResource TextMicro}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                        Text="{l:Localize Parking_MapHint}" />
+                </Grid>
+            </Border>
+
+            <Label
+                Text="{l:Localize Parking_MapUnavailable}"
+                Style="{StaticResource TextBody}"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding IsNativeMapConfigured, Converter={StaticResource InvertBoolConverter}}" />
+
+            <!-- Map controls: satellite/regular toggle plus zoom and recenter. -->
+            <HorizontalStackLayout
+                Spacing="8"
+                HorizontalOptions="Center"
+                IsVisible="{Binding IsNativeMapConfigured}">
+                <!-- Map layer selection uses the platform Picker control; zoom and
+                     recentering rely on the native map gestures/controls. -->
+                <Label
+                    Text="{l:Localize Parking_MapType_Label}"
+                    Style="{StaticResource TextCaption}"
+                    VerticalOptions="Center" />
+                <Picker
+                    ItemsSource="{Binding MapTypeOptions}"
+                    SelectedIndex="{Binding SelectedMapTypeIndex}"
+                    WidthRequest="150"
+                    SemanticProperties.Description="{l:Localize Parking_MapType_Label}" />
+                <Button
+                    Text="{l:Localize Parking_Center_Button}"
+                    Command="{Binding CenterOnLocationCommand}"
+                    Style="{StaticResource ButtonCompact}"
+                    SemanticProperties.Description="{l:Localize Parking_Center_Button}" />
+            </HorizontalStackLayout>
+
+            <!-- Zone legend: small color swatches matching the map overlays. -->
+            <HorizontalStackLayout
+                Spacing="16"
+                HorizontalOptions="Center"
+                BindableLayout.ItemsSource="{Binding Legend}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ParkingLegendItem">
+                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                            <Border
+                                WidthRequest="12"
+                                HeightRequest="12"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 3"
+                                BackgroundColor="{Binding ColorHex}" />
+                            <Label
+                                Text="{Binding Label}"
+                                Style="{StaticResource TextMicro}" />
+                        </HorizontalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+
+            <Label
+                Text="{Binding MapStatusMessage}"
+                Style="{StaticResource TextCaption}"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding HasMapStatus}" />
+
+            <Label
+                Text="{Binding ActiveEventBanner}"
+                Style="{StaticResource TextCaptionStrong}"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding ActiveEventBanner, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+            <Button
+                Text="{l:Localize Parking_Validate_Button}"
+                Command="{Binding ValidateLocationCommand}"
+                Style="{StaticResource ButtonProminent}"
+                IsVisible="{Binding HasParkingConfig}"
+                HorizontalOptions="Fill" />
+
+            <Border
+                Padding="14,12"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 8"
+                BackgroundColor="{Binding ValidationColorHex}"
+                IsVisible="{Binding HasValidation}">
+                <Label
+                    Text="{Binding ValidationMessage}"
+                    Style="{StaticResource TextCaption}"
+                    TextColor="White"
+                    HorizontalTextAlignment="Center" />
+            </Border>
+
+            <!-- Zones come from the masjid's parking document and can change at
+                 any time; signs on the ground always take precedence. -->
+            <Label
+                Text="{l:Localize Parking_ZoneDisclaimer}"
+                Style="{StaticResource TextMicro}"
+                HorizontalTextAlignment="Center"
+                IsVisible="{Binding HasParkingConfig}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+
+            <BoxView HeightRequest="96" Color="Transparent" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

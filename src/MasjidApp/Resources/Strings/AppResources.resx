@@ -369,6 +369,77 @@
   <data name="About_Map_SemanticDescription" xml:space="preserve">
     <value>Masjid location map for {0}. Double tap to open directions.</value>
   </data>
+  <data name="About_Parking_Button" xml:space="preserve">
+    <value>Parking guide</value>
+  </data>
+
+  <!-- ── Parking guide (API-06 parking feature flag) ───────────────────────── -->
+  <data name="About_Parking_Button" xml:space="preserve">
+    <value>Parking guide</value>
+  </data>
+  <data name="Parking_Title" xml:space="preserve">
+    <value>Parking</value>
+  </data>
+  <data name="Parking_MapHint" xml:space="preserve">
+    <value>Zone colors show where parking is allowed right now.</value>
+  </data>
+  <data name="Parking_MapType_Label" xml:space="preserve">
+    <value>Map type</value>
+  </data>
+  <data name="Parking_MapType_Satellite" xml:space="preserve">
+    <value>Satellite</value>
+  </data>
+  <data name="Parking_MapType_Street" xml:space="preserve">
+    <value>Regular</value>
+  </data>
+  <data name="Parking_Center_Button" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Parking_UserPin" xml:space="preserve">
+    <value>You are here</value>
+  </data>
+  <data name="Parking_ZoneDisclaimer" xml:space="preserve">
+    <value>Parking zones are provided by the mosque and can change. Always follow posted signs.</value>
+  </data>
+  <data name="Parking_MapUnavailable" xml:space="preserve">
+    <value>Maps are not available on this device.</value>
+  </data>
+  <data name="Parking_LoadError" xml:space="preserve">
+    <value>No parking map is available for this masjid.</value>
+  </data>
+  <data name="Parking_Legend_Allowed" xml:space="preserve">
+    <value>Parking allowed</value>
+  </data>
+  <data name="Parking_Legend_NoParking" xml:space="preserve">
+    <value>No parking</value>
+  </data>
+  <data name="Parking_Legend_EventRestricted" xml:space="preserve">
+    <value>Restricted during events</value>
+  </data>
+  <data name="Parking_ActiveEvent" xml:space="preserve">
+    <value>Event parking restrictions are in effect now.</value>
+  </data>
+  <data name="Parking_Validate_Button" xml:space="preserve">
+    <value>Validate my parking spot</value>
+  </data>
+  <data name="Parking_Validate_Allowed" xml:space="preserve">
+    <value>You are in {0}, which is allowed for parking right now.</value>
+  </data>
+  <data name="Parking_Validate_NoParking" xml:space="preserve">
+    <value>Parking is not allowed where you are standing.</value>
+  </data>
+  <data name="Parking_Validate_EventRestricted" xml:space="preserve">
+    <value>This area is restricted during the current event.</value>
+  </data>
+  <data name="Parking_Validate_OutsideZones" xml:space="preserve">
+    <value>You are outside the marked parking zones.</value>
+  </data>
+  <data name="Parking_Validate_Denied" xml:space="preserve">
+    <value>Location permission was denied. Please enable it in Settings to validate your parking spot.</value>
+  </data>
+  <data name="Parking_Validate_Unavailable" xml:space="preserve">
+    <value>Could not determine your location. Please try again.</value>
+  </data>
 
   <!-- ── Qibla (Batch B5) ──────────────────────────────────────────────────── -->  <data name="Qibla_Title" xml:space="preserve">
     <value>Qibla Direction</value>

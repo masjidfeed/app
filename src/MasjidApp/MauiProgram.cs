@@ -4,6 +4,7 @@ using MasjidApp.Core.Events;
 using MasjidApp.Core.Http;
 using MasjidApp.Core.Notifications;
 using MasjidApp.Core.Observability;
+using MasjidApp.Core.Parking;
 using MasjidApp.Core.PrayerTimes;
 using MasjidApp.Core.Posts;
 using MasjidApp.Core.SalahApi;
@@ -71,6 +72,19 @@ public static class MauiProgram
                 if (view is DonationWebView or RamadanWebView)
                 {
                     handler.PlatformView.Settings.SetSupportMultipleWindows(false);
+                }
+            });
+        // Parking map: zooming uses the native Google Maps zoom buttons and compass
+        // (plus pinch gestures) instead of custom app buttons (API-06 parking).
+        Microsoft.Maui.Maps.Handlers.MapHandler.Mapper.AppendToMapping(
+            "NativeMapControls",
+            static (handler, view) =>
+            {
+                if (view is Microsoft.Maui.Controls.Maps.Map &&
+                    handler.PlatformView is Android.Gms.Maps.GoogleMap googleMap)
+                {
+                    googleMap.UiSettings.ZoomControlsEnabled = true;
+                    googleMap.UiSettings.CompassEnabled = true;
                 }
             });
 #endif
@@ -275,6 +289,10 @@ public static class MauiProgram
         services.AddTransient<QiblaViewModel>();
         services.AddSingleton<AboutViewModel>();
         services.AddTransient<DonationsViewModel>();
+        // Parking guide (API-06 parking feature flag): map document service plus
+        // the pushed parking guide page's ViewModel and view.
+        services.AddSingleton<IParkingConfigService, ParkingConfigService>();
+        services.AddTransient<ParkingViewModel>();
         // Ramadan home category (API-06 ramadan feature flag): one instance shared
         // with the Home shell so the strip and inline webpage stay in sync.
         services.AddSingleton<RamadanViewModel>();
@@ -304,6 +322,7 @@ public static class MauiProgram
         services.AddTransient<ContactPage>();
         services.AddTransient<QiblaPage>();
         services.AddTransient<DonationsPage>();
+        services.AddTransient<ParkingPage>();
         services.AddTransient<SettingsPage>();
         services.AddTransient<AppearancePage>();
         services.AddTransient<PrayerReminderLeadTimePage>();

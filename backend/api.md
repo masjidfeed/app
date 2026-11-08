@@ -112,6 +112,7 @@ Example response:
   "featureFlags": {
     "events": true,
     "announcements": true,
+    "pushNotifications": true,
     "donations": true,
     "ramadan": true,
     "parking": true,

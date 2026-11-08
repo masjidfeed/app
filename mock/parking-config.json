@@ -1,0 +1,50 @@
+{
+  "center": { "latitude": 47.7779, "longitude": -122.1906 },
+  "nearRadiusMeters": 800,
+  "zones": [
+    {
+      "id": "north-lot",
+      "name": "North lot",
+      "type": "no-parking",
+      "message": "Please move to a permitted parking area.",
+      "coordinates": [
+        { "latitude": 47.77882298016584, "longitude": -122.19132629326828 },
+        { "latitude": 47.77882298016584, "longitude": -122.18952387645021 },
+        { "latitude": 47.77809991713082, "longitude": -122.18952387645021 },
+        { "latitude": 47.77809991713082, "longitude": -122.19132629326828 }
+      ]
+    },
+    {
+      "id": "east-street",
+      "name": "East street",
+      "type": "event-restricted",
+      "message": "Reserved for event traffic during Friday prayer.",
+      "coordinates": [
+        { "latitude": 47.7782, "longitude": -122.1880 },
+        { "latitude": 47.7782, "longitude": -122.1872 },
+        { "latitude": 47.7772, "longitude": -122.1872 },
+        { "latitude": 47.7772, "longitude": -122.1880 }
+      ]
+    },
+    {
+      "id": "overflow-lot",
+      "name": "Overflow lot",
+      "type": "allowed",
+      "coordinates": [
+        { "latitude": 47.7770, "longitude": -122.1889 },
+        { "latitude": 47.7770, "longitude": -122.1875 },
+        { "latitude": 47.7760, "longitude": -122.1875 },
+        { "latitude": 47.7760, "longitude": -122.1889 }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "jummah",
+      "name": "Friday Prayer",
+      "message": "Strict parking rules are in effect for Friday prayer.",
+      "schedule": { "type": "weekly", "days": [5], "start": "11:30", "end": "15:30" },
+      "zoneIds": ["east-street"]
+    }
+  ]
+}

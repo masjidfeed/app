@@ -133,7 +133,7 @@ public sealed partial class AddMasjidViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// When the masjid's config enables announcement notifications but device
+    /// When the masjid's config enables push notifications but device
     /// notifications are disabled, navigates to Settings where the user is
     /// prompted to enable them.
     /// </summary>
@@ -141,7 +141,7 @@ public sealed partial class AddMasjidViewModel : ViewModelBase
         MasjidConfig config,
         CancellationToken ct)
     {
-        if (config.FeatureFlags?.Announcements != true ||
+        if (config.FeatureFlags?.PushNotifications != true ||
             await _pushNotificationSettings.IsDeviceNotificationsEnabledAsync(ct))
         {
             return;

@@ -56,6 +56,9 @@ public static class Routes
     /// <summary>Contact &amp; masjid info screen (FR-CM-02, FR-CM-04) - Batch B4.</summary>
     public const string Contact = "contact";
 
+    /// <summary>Parking guide map with zone overlays and spot validation.</summary>
+    public const string Parking = "parking";
+
     // ── Modal / overlay routes ──────────────────────────────────────────────────
 
     /// <summary>Masjid selection screen (accessible from Settings).</summary>

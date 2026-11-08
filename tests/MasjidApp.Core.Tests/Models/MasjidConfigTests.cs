@@ -28,7 +28,8 @@ public sealed class MasjidConfigTests
           "endpoints": {
             "salahApiUrl": "http://localhost:8090/salahapi",
             "eventsUrl": "http://localhost:8090/events",
-            "announcementsUrl": "http://localhost:8090/announcements"
+            "announcementsUrl": "http://localhost:8090/announcements",
+            "parkingUrl": "http://localhost:8090/parking-config"
           },
           "contact": {
             "address": "10921 NE 191st St, Bothell, WA 98011, USA",
@@ -46,10 +47,12 @@ public sealed class MasjidConfigTests
           "featureFlags": {
             "events": true,
             "announcements": true,
+            "pushNotifications": true,
             "donations": true,
             "qibla": true,
             "prayerReminders": true,
-            "ramadan": true
+            "ramadan": true,
+            "parking": true
           }
         }
         """;
@@ -78,6 +81,7 @@ public sealed class MasjidConfigTests
         config.Endpoints!.SalahApiUrl.Should().EndWith("/salahapi");
         config.Endpoints.EventsUrl.Should().EndWith("/events");
         config.Endpoints.AnnouncementsUrl.Should().EndWith("/announcements");
+        config.Endpoints.ParkingUrl.Should().EndWith("/parking-config");
 
         // Contact
         config.Contact.Should().NotBeNull();
@@ -99,9 +103,11 @@ public sealed class MasjidConfigTests
         config.FeatureFlags.Should().NotBeNull();
         config.FeatureFlags!.Events.Should().BeTrue();
         config.FeatureFlags.Donations.Should().BeTrue();
+        config.FeatureFlags.PushNotifications.Should().BeTrue();
         config.FeatureFlags.Qibla.Should().BeTrue();
         config.FeatureFlags.PrayerReminders.Should().BeTrue();
         config.FeatureFlags.Ramadan.Should().BeTrue();
+        config.FeatureFlags.Parking.Should().BeTrue();
     }
 
     [Fact]
