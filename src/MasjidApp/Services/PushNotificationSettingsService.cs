@@ -1,6 +1,4 @@
 using MasjidApp.Push;
-using MasjidApp.PlatformPermissions;
-using Microsoft.Maui.ApplicationModel;
 using Plugin.LocalNotification;
 
 namespace MasjidApp.Services;
@@ -16,19 +14,16 @@ public sealed class PushNotificationSettingsService : IPushNotificationSettingsS
     private readonly IUserPreferences _preferences;
     private readonly INotificationService _notifications;
     private readonly IPushNotificationCoordinator _coordinator;
-    private readonly IDeviceNotificationSettings _deviceSettings;
 
     /// <summary>Creates the remote push settings service.</summary>
     public PushNotificationSettingsService(
         IUserPreferences preferences,
         INotificationService notifications,
-        IPushNotificationCoordinator coordinator,
-        IDeviceNotificationSettings deviceSettings)
+        IPushNotificationCoordinator coordinator)
     {
         _preferences = preferences;
         _notifications = notifications;
         _coordinator = coordinator;
-        _deviceSettings = deviceSettings;
     }
 
     /// <inheritdoc />
@@ -91,11 +86,9 @@ public sealed class PushNotificationSettingsService : IPushNotificationSettingsS
 
         if (!allowed)
         {
-            // Device notifications are off: keep the toggle on and send the user
-            // to the OS page where notifications can be enabled.
+            // Device notifications are off: keep the app-level opt-in on; the settings
+            // UI prompts the user to enable notifications in system settings.
             SetState(PushNotificationState.EnabledButFailed);
-            await MainThread.InvokeOnMainThreadAsync(() => _deviceSettings.OpenAsync())
-                .ConfigureAwait(false);
             return PushNotificationState.EnabledButFailed;
         }
 

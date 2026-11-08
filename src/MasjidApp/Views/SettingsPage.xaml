@@ -204,14 +204,6 @@
                             VerticalOptions="Center"
                             TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                     </Grid>
-
-                    <Label
-                        Margin="16,0,16,12"
-                        Text="{Binding PrayerReminderStatus}"
-                        IsVisible="{Binding PrayerReminderStatus, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-                        Style="{StaticResource TextCaption}"
-                        TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
-                        SemanticProperties.Description="{Binding PrayerReminderStatus}" />
                 </VerticalStackLayout>
             </Border>
 

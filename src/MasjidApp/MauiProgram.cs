@@ -245,6 +245,7 @@ public static class MauiProgram
         services.AddSingleton<IPushNotificationCoordinator, PushNotificationCoordinator>();
         services.AddSingleton<IPushNotificationSettingsService, PushNotificationSettingsService>();
         services.AddSingleton<IDeviceNotificationSettings, DeviceNotificationSettings>();
+        services.AddSingleton<IAlertService, AlertService>();
 
         // ── Batch B2: Events ─────────────────────────────────────────────────────
         services.AddSingleton<IEventsService, EventsService>();

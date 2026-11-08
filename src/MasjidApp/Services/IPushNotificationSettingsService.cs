@@ -15,8 +15,8 @@ public interface IPushNotificationSettingsService
     Task<PushNotificationState> RefreshAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Enables remote push: attempts the registration POST. When device notifications
-    /// are disabled, also opens the OS notification settings page after registering.
+    /// Enables remote push: attempts the registration POST even when device
+    /// notifications are disabled (the UI then prompts to enable them).
     /// </summary>
     Task<PushNotificationState> EnableAsync(CancellationToken ct = default);
 

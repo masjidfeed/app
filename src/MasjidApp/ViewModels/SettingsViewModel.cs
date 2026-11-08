@@ -30,6 +30,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly TelemetryService _telemetry;
     private readonly IPrayerReminderSettingsService _prayerReminderSettings;
     private readonly IPushNotificationSettingsService _pushNotificationSettings;
+    private readonly IAlertService _alerts;
+    private readonly IDeviceNotificationSettings _deviceNotificationSettings;
 
     /// <summary>The currently selected app theme (FR-ST-03).</summary>
     [ObservableProperty]
@@ -70,13 +72,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>The selected iqama reminder lead time shown in the Settings disclosure row.</summary>
     public string SelectedPrayerReminderLeadTimeDisplay =>
         PrayerReminderLeadTimeOptions[SelectedPrayerReminderLeadTimeIndex];
-
-    /// <summary>
-    /// Non-blocking status for the most recent reminder scheduling operation.
-    /// Only failures are surfaced; successful scheduling stays silent.
-    /// </summary>
-    [ObservableProperty]
-    private string _prayerReminderStatus = string.Empty;
 
     /// <summary>Whether prayer reminders are currently being rescheduled.</summary>
     [ObservableProperty]
@@ -146,7 +141,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IMasjidContext masjidContext,
         TelemetryService telemetry,
         IPrayerReminderSettingsService prayerReminderSettings,
-        IPushNotificationSettingsService pushNotificationSettings)
+        IPushNotificationSettingsService pushNotificationSettings,
+        IAlertService alerts,
+        IDeviceNotificationSettings deviceNotificationSettings)
     {
         _preferences = preferences;
         _themeService = themeService;
@@ -155,6 +152,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _telemetry = telemetry;
         _prayerReminderSettings = prayerReminderSettings;
         _pushNotificationSettings = pushNotificationSettings;
+        _alerts = alerts;
+        _deviceNotificationSettings = deviceNotificationSettings;
 
         Title = "Settings";
 
@@ -267,15 +266,18 @@ public sealed partial class SettingsViewModel : ViewModelBase
             {
                 PushNotificationState = await _pushNotificationSettings.EnableAsync(ct);
                 PushNotificationsEnabled = PushNotificationState != PushNotificationState.Disabled;
-                PushNotificationStatus = PushNotificationState switch
+
+                if (PushNotificationState == PushNotificationState.EnabledButFailed &&
+                    !await _pushNotificationSettings.IsDeviceNotificationsEnabledAsync(ct))
                 {
-                    PushNotificationState.EnabledButFailed when !await _pushNotificationSettings
-                        .IsDeviceNotificationsEnabledAsync(ct) =>
-                        Localize("Settings_PushNotifications_Status_EnableNotifications"),
-                    PushNotificationState.EnabledButFailed =>
-                        Localize("Settings_PushNotifications_Status_RegistrationFailed"),
-                    _ => string.Empty,
-                };
+                    // Device notifications are off: offer to enable them in system settings.
+                    await PromptToEnableNotificationsAsync();
+                }
+                else if (PushNotificationState == PushNotificationState.EnabledButFailed)
+                {
+                    PushNotificationStatus =
+                        Localize("Settings_PushNotifications_Status_RegistrationFailed");
+                }
             }
         }
         finally
@@ -323,7 +325,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public async Task ApplyPrayerReminderSettingsAsync(CancellationToken ct = default)
     {
         IsUpdatingPrayerReminders = true;
-        PrayerReminderStatus = string.Empty;
 
         try
         {
@@ -335,22 +336,31 @@ public sealed partial class SettingsViewModel : ViewModelBase
             if (result == PrayerReminderUpdateResult.PermissionDenied)
             {
                 PrayerRemindersEnabled = false;
+                // Device notifications are off: offer to enable them in system settings.
+                await PromptToEnableNotificationsAsync();
             }
-
-            PrayerReminderStatus = result switch
-            {
-                PrayerReminderUpdateResult.ScheduleUnavailable =>
-                    Localize("Settings_PrayerReminder_Status_Unavailable"),
-                PrayerReminderUpdateResult.PermissionDenied =>
-                    Localize("Settings_PrayerReminder_Status_Denied"),
-                PrayerReminderUpdateResult.SchedulingFailed =>
-                    Localize("Settings_PrayerReminder_Status_Failed"),
-                _ => string.Empty,
-            };
         }
         finally
         {
             IsUpdatingPrayerReminders = false;
+        }
+    }
+
+    /// <summary>
+    /// Shows an alert explaining that notifications are disabled and opens the OS
+    /// notification settings page when the user agrees. Shared by the announcements
+    /// and prayer-reminder toggles so both surface the same normalized prompt.
+    /// </summary>
+    private async Task PromptToEnableNotificationsAsync()
+    {
+        var openSettings = await _alerts.DisplayAlertAsync(
+            Localize("Settings_NotificationsDisabled_Title"),
+            Localize("Settings_NotificationsDisabled_Message"),
+            Localize("Settings_NotificationsDisabled_Accept"),
+            Localize("App_Cancel"));
+        if (openSettings)
+        {
+            await _deviceNotificationSettings.OpenAsync();
         }
     }
 

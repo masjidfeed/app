@@ -226,11 +226,17 @@
   <data name="Settings_PushNotifications_Status_RegistrationFailed" xml:space="preserve">
     <value>Notification registration failed. Please retry.</value>
   </data>
-  <data name="Settings_PushNotifications_Status_EnableNotifications" xml:space="preserve">
-    <value>Notifications are disabled on this device. Please enable them in the system settings.</value>
-  </data>
   <data name="Settings_PushNotifications_Retry" xml:space="preserve">
     <value>Retry</value>
+  </data>
+  <data name="Settings_NotificationsDisabled_Title" xml:space="preserve">
+    <value>Notifications Disabled</value>
+  </data>
+  <data name="Settings_NotificationsDisabled_Message" xml:space="preserve">
+    <value>Notifications are turned off for this app in system settings.</value>
+  </data>
+  <data name="Settings_NotificationsDisabled_Accept" xml:space="preserve">
+    <value>Open Settings</value>
   </data>
   <data name="Settings_PrayerReminder_LeadTime_Label" xml:space="preserve">
     <value>Notify before iqama</value>
