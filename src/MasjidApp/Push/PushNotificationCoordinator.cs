@@ -9,6 +9,7 @@ using MasjidApp.Core.Utils;
 using MasjidApp.Notifications;
 using MasjidApp.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.ApplicationModel;
 #if IOS || ANDROID
 using Plugin.Firebase.AppCheck;
 using Plugin.Firebase.CloudMessaging;
@@ -113,9 +114,21 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
                 return true;
             }
 
+            // Plugin.Firebase touches UIKit during iOS initialization and validity
+            // checks; it must run on the main thread. The FCM token fetch below stays
+            // off it because the call performs network I/O.
+#if IOS
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await EnsureFirebaseAsync(push.Firebase).ConfigureAwait(false);
+                await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
+            }).ConfigureAwait(false);
+#else
             await EnsureFirebaseAsync(push.Firebase).ConfigureAwait(false);
             await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
-            var token = await _messaging.GetTokenAsync().ConfigureAwait(false);
+#endif
+            var messaging = _messaging!;
+            var token = await messaging.GetTokenAsync().ConfigureAwait(false);
             return await RegisterAsync(
                 masjidId!,
                 push.RegistrationUrl!,
@@ -130,6 +143,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"PUSHDBG: SyncAsync EXCEPTION {ex.GetType().Name}: {ex.Message} :: {ex.InnerException?.Message}");
             LogPushSyncFailed(_logger, ex);
             return false;
         }
@@ -319,6 +333,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         var options = new FirebaseOptions.Builder()
             .SetApplicationId(Required(platform.AppId, "appId"))
             .SetGcmSenderId(Required(platform.SenderId, "senderId"))
+            .SetProjectId(Required(platform.ProjectId, "projectId"))
             .SetApiKey(Required(platform.ApiKey, "apiKey"))
             .Build();
         CrossFirebase.Initialize(activity, () => Platform.CurrentActivity!, options);
@@ -329,6 +344,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             Required(platform.SenderId, "senderId"))
         {
             ApiKey = Required(platform.ApiKey, "apiKey"),
+            ProjectId = Required(platform.ProjectId, "projectId"),
             BundleId = AppInfo.PackageName,
         };
         CrossFirebase.Initialize(firebaseOptions: options);
@@ -387,6 +403,13 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         string? previousToken,
         CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Console.WriteLine("PUSHDBG: no FCM token available");
+            LogPushTokenMissing(_logger);
+            return false;
+        }
+
         if (string.Equals(token, previousToken, StringComparison.Ordinal))
         {
             return true;
@@ -402,7 +425,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             FirebaseAppCheckHeader.Add(
                 message,
                 await CrossFirebaseAppCheck.GetTokenAsync().ConfigureAwait(false));
+            Console.WriteLine("PUSHDBG: sending POST");
             using var response = await _http.SendAsync(message, ct).ConfigureAwait(false);
+            Console.WriteLine($"PUSHDBG: POST status={(int)response.StatusCode}");
             response.EnsureSuccessStatusCode();
 
             await SaveStateAsync(new PushRegistrationState(masjidId, registrationUrl, token, firebase))
@@ -415,6 +440,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"PUSHDBG: RegisterAsync EXCEPTION {ex.GetType().Name}: {ex.Message} :: {ex.InnerException?.Message}");
             LogPushRegisterFailed(_logger, ex);
             return false;
         }
@@ -424,7 +450,12 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     {
         try
         {
+#if IOS
+            await MainThread.InvokeOnMainThreadAsync(
+                () => EnsureFirebaseAsync(state.Firebase)).ConfigureAwait(false);
+#else
             await EnsureFirebaseAsync(state.Firebase).ConfigureAwait(false);
+#endif
             var request = new PushRegistrationRequest(state.MasjidId, PlatformName, state.Token);
             using var message = new HttpRequestMessage(HttpMethod.Delete, state.RegistrationUrl)
             {
@@ -542,6 +573,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push registration failed.")]
     private static partial void LogPushRegisterFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push registration skipped: no FCM token available.")]
+    private static partial void LogPushTokenMissing(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push could not be unregistered from the previous tenant.")]
     private static partial void LogPushUnregisterFailed(ILogger logger, Exception exception);

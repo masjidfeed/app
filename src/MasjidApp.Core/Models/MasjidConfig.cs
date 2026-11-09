@@ -83,6 +83,9 @@ public sealed record FirebaseIosConfig
     [JsonPropertyName("senderId")]
     public string? SenderId { get; init; }
 
+    [JsonPropertyName("projectId")]
+    public string? ProjectId { get; init; }
+
     [JsonPropertyName("apiKey")]
     public string? ApiKey { get; init; }
 }
@@ -95,6 +98,9 @@ public sealed record FirebaseAndroidConfig
 
     [JsonPropertyName("senderId")]
     public string? SenderId { get; init; }
+
+    [JsonPropertyName("projectId")]
+    public string? ProjectId { get; init; }
 
     [JsonPropertyName("apiKey")]
     public string? ApiKey { get; init; }

@@ -127,11 +127,13 @@ Example response:
       "ios": {
         "appId": "1:123456789:ios:abcdef",
         "senderId": "123456789",
+        "projectId": "example-project",
         "apiKey": "public-api-key"
       },
       "android": {
         "appId": "1:123456789:android:abcdef",
         "senderId": "123456789",
+        "projectId": "example-project",
         "apiKey": "public-api-key"
       }
     }
@@ -156,9 +158,12 @@ non-empty `donationUrl` or `ramadanUrl` automatically includes
 preserved.
 
 `pushNotifications.configured` is true only when encrypted server credentials
-and both platform configurations exist. Firebase client API keys in this
-response are public application configuration; service-account credentials are
-never returned.
+and both platform configurations exist. `firebase.ios.projectId` and
+`firebase.android.projectId` carry the Firebase project identifier; clients
+must supply it when initializing Firebase because Firebase Installations
+(used by FCM and App Check) rejects apps configured without it. All values
+under `pushNotifications.firebase` are public application configuration;
+service-account credentials are never returned.
 
 ## Push Registration
 
