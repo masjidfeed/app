@@ -20,7 +20,7 @@ on:
         required: false
         type: string
       app_version:
-        description: "Marketing version, e.g. 1.1. Leave empty to keep the current one."
+        description: "Marketing version, e.g. 1.1. Leave empty to use src/MasjidApp/app-version.txt."
         required: false
         type: string
       commit_version_bump:

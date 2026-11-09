@@ -16,7 +16,10 @@
 #   GOOGLE_PLAY_RELEASE_STATUS    draft or completed (default: draft).
 #   GOOGLE_MAPS_API_KEY           Required production-restricted Android Maps key.
 #   BUILD_NUMBER                  New ApplicationVersion. Defaults to current + 1.
-#   APP_VERSION                   Optional new ApplicationDisplayVersion.
+#   APP_VERSION                   New ApplicationDisplayVersion (marketing version, e.g.
+#                                 "1.1"). Defaults to the first line of
+#                                 src/MasjidApp/app-version.txt, the same file the project
+#                                 builds from.
 #   PUBLISH_ARTIFACTS_DIR         Optional output directory for the AAB and safe diagnostics.
 #   NATIVE_SYMBOLS_ZIP            Optional output path for Play native debug symbols.
 #   PUBLISHING_KEY_VAULT_NAME     Azure Key Vault holding release credentials. Defaults to
@@ -27,6 +30,7 @@ cd "$(dirname "$0")/.."
 
 CSPROJ="src/MasjidApp/MasjidApp.csproj"
 WIDGET_INFO_PLIST="src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist"
+VERSION_FILE="src/MasjidApp/app-version.txt"
 PUBLISH_DIR="src/MasjidApp/bin/Release/net10.0-android/publish"
 MERGED_MANIFEST="src/MasjidApp/obj/Release/net10.0-android/android/AndroidManifest.xml"
 
@@ -161,23 +165,22 @@ NEW_BUILD="$NEW_BUILD" perl -0pi -e '
 ' "$WIDGET_INFO_PLIST"
 echo "Build number: $CURRENT_BUILD -> $NEW_BUILD"
 
-if [ -n "${APP_VERSION:-}" ]; then
-  case "$APP_VERSION" in
-    *[!0-9A-Za-z._+-]*) fail "APP_VERSION contains unsupported characters." ;;
-  esac
-  CURRENT_DISPLAY=$(sed -n 's:.*<ApplicationDisplayVersion>\([^<]*\)</ApplicationDisplayVersion>.*:\1:p' "$CSPROJ" | head -1)
-  [ -n "$CURRENT_DISPLAY" ] || fail "Could not read ApplicationDisplayVersion from $CSPROJ."
-
-  CURRENT_DISPLAY="$CURRENT_DISPLAY" APP_VERSION="$APP_VERSION" perl -0pi -e '
-    s{<ApplicationDisplayVersion>\Q$ENV{CURRENT_DISPLAY}\E</ApplicationDisplayVersion>}
-     {<ApplicationDisplayVersion>$ENV{APP_VERSION}</ApplicationDisplayVersion>}g
-  ' "$CSPROJ"
-  APP_VERSION="$APP_VERSION" perl -0pi -e '
-    s{(<key>CFBundleShortVersionString</key>\s*<string>)[^<]*(</string>)}
-     {$1$ENV{APP_VERSION}$2}g
-  ' "$WIDGET_INFO_PLIST"
-  echo "App version: $CURRENT_DISPLAY -> $APP_VERSION"
+# The marketing version comes from app-version.txt (the csproj reads the same file at
+# build time); APP_VERSION is only a one-off override. Keep the iOS widget extension in
+# sync so an Android release does not leave the next App Store build inconsistent.
+if [ -z "${APP_VERSION:-}" ]; then
+  [ -f "$VERSION_FILE" ] || fail "APP_VERSION not set and $VERSION_FILE not found."
+  APP_VERSION=$(head -1 "$VERSION_FILE" | tr -d '[:space:]')
+  [ -n "$APP_VERSION" ] || fail "$VERSION_FILE does not contain a version."
 fi
+case "$APP_VERSION" in
+  *[!0-9A-Za-z._+-]*) fail "APP_VERSION contains unsupported characters." ;;
+esac
+APP_VERSION="$APP_VERSION" perl -0pi -e '
+  s{(<key>CFBundleShortVersionString</key>\s*<string>)[^<]*(</string>)}
+   {$1$ENV{APP_VERSION}$2}g
+' "$WIDGET_INFO_PLIST"
+echo "App version: $APP_VERSION"
 
 echo "==> Step 3: build signed Android App Bundle"
 rm -rf "$PUBLISH_DIR"

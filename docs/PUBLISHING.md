@@ -113,8 +113,10 @@ What each step does:
 - **Step 2 (repo prep):** adds `ITSAppUsesNonExemptEncryption` to
   [Platforms/iOS/Info.plist](../src/MasjidApp/Platforms/iOS/Info.plist) if it's missing.
 - **Step 3 (version bump):** increments `ApplicationVersion` by 1 (override with
-  `BUILD_NUMBER`); leaves `ApplicationDisplayVersion` unchanged unless `APP_VERSION` is
-  set. Keeps `MasjidApp.csproj` and both extensions' `Info.plist` files in sync.
+  `BUILD_NUMBER`) and takes the marketing version from the first line of
+  [app-version.txt](../src/MasjidApp/app-version.txt) — the same file
+  `MasjidApp.csproj` reads at build time — unless `APP_VERSION` overrides it. Keeps
+  both extensions' `Info.plist` files in sync with it.
 - **Step 4 (archive):** removes the complete prior Release `ios-arm64` bin/obj slice, then
   runs `dotnet publish -f net10.0-ios -c Release` for `ios-arm64` with
   `-p:ArchiveOnBuild=true`. This prevents incremental outputs from mixing AOT modules and
@@ -563,9 +565,14 @@ generated release manifest from Step 5 for the final declaration review.
 
 ## Step 4 - Set versions and release configuration
 
+In [app-version.txt](../src/MasjidApp/app-version.txt):
+
+- The public version name, for example `1.0.1` (one line, first line wins). Both the
+  MAUI build and the publish scripts read it, so iOS, Android, and the iOS extensions
+  always publish the same marketing version.
+
 In [MasjidApp.csproj](../src/MasjidApp/MasjidApp.csproj):
 
-- `ApplicationDisplayVersion` is the public version name, for example `1.0.1`.
 - `ApplicationVersion` is Android's integer version code. It must be greater than every
   bundle previously uploaded to this Play app.
 

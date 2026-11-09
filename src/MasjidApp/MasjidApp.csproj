@@ -28,9 +28,9 @@
 		<!-- App Identifier -->
 		<ApplicationId>com.goodsoftware.masjidapp</ApplicationId>
 
-		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-		<ApplicationVersion>32</ApplicationVersion>
+		<!-- Versions: marketing version lives in app-version.txt so bumping it is one edit. -->
+		<ApplicationDisplayVersion Condition="'$(ApplicationDisplayVersion)' == ''">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)app-version.txt').Trim())</ApplicationDisplayVersion>
+		<ApplicationVersion>34</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>

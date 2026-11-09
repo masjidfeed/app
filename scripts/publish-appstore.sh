@@ -37,7 +37,9 @@
 #   BUILD_NUMBER               New ApplicationVersion (build number). Defaults to the
 #                              current value + 1.
 #   APP_VERSION                New ApplicationDisplayVersion (marketing version, e.g.
-#                              "1.1"). Defaults to leaving it unchanged.
+#                              "1.1"). Defaults to the first line of
+#                              src/MasjidApp/app-version.txt, the same file the project
+#                              builds from.
 #   PUBLISH_ARTIFACTS_DIR      Optional directory for crash-debugging outputs. When set,
 #                              receives the exact uploaded IPA and the MSBuild binary log.
 #   PUBLISHING_KEY_VAULT_NAME  Azure Key Vault holding release credentials. Defaults to
@@ -60,6 +62,7 @@ CSPROJ="src/MasjidApp/MasjidApp.csproj"
 IOS_INFO_PLIST="src/MasjidApp/Platforms/iOS/Info.plist"
 WIDGET_INFO_PLIST="src/MasjidApp/Platforms/iOS/MasjidWidget/Info.plist"
 NOTIFICATION_SERVICE_INFO_PLIST="src/MasjidApp/Platforms/iOS/NotificationServiceExtension/Info.plist"
+VERSION_FILE="src/MasjidApp/app-version.txt"
 
 BUNDLE_ID=$(grep -o '<ApplicationId>[^<]*</ApplicationId>' "$CSPROJ" | sed 's/<[^>]*>//g')
 WIDGET_BUNDLE_ID="$BUNDLE_ID.MasjidWidgetExtension"
@@ -311,13 +314,26 @@ plutil -replace CFBundleVersion -string "$NEW_BUILD" "$WIDGET_INFO_PLIST"
 plutil -replace CFBundleVersion -string "$NEW_BUILD" "$NOTIFICATION_SERVICE_INFO_PLIST"
 echo "Build number: $CURRENT_BUILD -> $NEW_BUILD"
 
-if [ -n "${APP_VERSION:-}" ]; then
-  CURRENT_DISPLAY=$(grep -o '<ApplicationDisplayVersion>[^<]*</ApplicationDisplayVersion>' "$CSPROJ" | sed 's/<[^>]*>//g')
-  sed -i '' "s#<ApplicationDisplayVersion>$CURRENT_DISPLAY</ApplicationDisplayVersion>#<ApplicationDisplayVersion>$APP_VERSION</ApplicationDisplayVersion>#" "$CSPROJ"
-  plutil -replace CFBundleShortVersionString -string "$APP_VERSION" "$WIDGET_INFO_PLIST"
-  plutil -replace CFBundleShortVersionString -string "$APP_VERSION" "$NOTIFICATION_SERVICE_INFO_PLIST"
-  echo "Marketing version: $CURRENT_DISPLAY -> $APP_VERSION"
+# The marketing version comes from app-version.txt (the csproj reads the same file at
+# build time); APP_VERSION is only a one-off override. The extensions do not go through
+# MSBuild, so their plists are synced here.
+if [ -z "${APP_VERSION:-}" ]; then
+  [ -f "$VERSION_FILE" ] || {
+    echo "APP_VERSION not set and $VERSION_FILE not found." >&2
+    exit 1
+  }
+  APP_VERSION=$(head -1 "$VERSION_FILE" | tr -d '[:space:]')
+  [ -n "$APP_VERSION" ] || {
+    echo "$VERSION_FILE does not contain a version." >&2
+    exit 1
+  }
 fi
+case "$APP_VERSION" in
+  *[!0-9A-Za-z._+-]*) { echo "APP_VERSION contains unsupported characters." >&2; exit 1; } ;;
+esac
+plutil -replace CFBundleShortVersionString -string "$APP_VERSION" "$WIDGET_INFO_PLIST"
+plutil -replace CFBundleShortVersionString -string "$APP_VERSION" "$NOTIFICATION_SERVICE_INFO_PLIST"
+echo "Marketing version: $APP_VERSION"
 
 # ── Step 4: build the archive ────────────────────────────────────────────────
 
