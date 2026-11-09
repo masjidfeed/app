@@ -51,7 +51,7 @@ The `masjid-api` plugin ([backend/wp-content/plugins/masjid-api/masjid-api.php](
 | GET | `/wp-json/masjid/v1/salahapi` | SalahAPI 1.0 document - same shape as `mock/salahapi.json` |
 | GET | `/wp-json/masjid/v1/events` | Events array - same shape as `mock/events.json` |
 | GET | `/wp-json/masjid/v1/announcements` | Announcements array - same shape as `mock/announcements.json` |
-| POST | `/wp-json/masjid/v1/push/register` | Register a push token: `{"platform":"ios"\|"android","token":"..."}` → `{"registered":true}` |
+| POST/DELETE | `/wp-json/masjid/v1/push/registrations` | Push registration (requires `X-Firebase-AppCheck`): `{"masjidId":"...","platform":"ios"\|"android","token":"...","registrationMode":"client"}` → `{"registered":true}` or `{"registered":false,"topicKey":{"site_id":"...","topic":"...","version":1,"expires_at":"..."}}`; see [api.md](../backend/api.md) |
 
 **Differences from the mock API (`mock/`):**
 - `/config` - `endpoints.*` URLs point at `:8000/wp-json/masjid/v1/…` instead of `:8090/…` so all traffic goes through WordPress when using `:8000` as the base URL.

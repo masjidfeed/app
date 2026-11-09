@@ -31,6 +31,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     private const string RegistrationStateKey = "push_registration_state";
     private const string LastPresentedNotificationIdKey = "push_last_presented_notification_id";
     private const string LastHandledNotificationIdKey = "push_last_handled_notification_id";
+    private const string RegistrationModeClient = "client";
     private const string PlatformName =
 #if IOS
         "ios";
@@ -129,12 +130,17 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 #endif
             var messaging = _messaging!;
             var token = await messaging.GetTokenAsync().ConfigureAwait(false);
+            // The hosted gateway rotates canonical topics, and re-registration is the
+            // only way to learn the current one, so every enabled sync registers again;
+            // the POST is idempotent and FCM topic subscriptions persist across token
+            // changes, so no server-side token bookkeeping is required in client mode.
             return await RegisterAsync(
                 masjidId!,
                 push.RegistrationUrl!,
                 push.Firebase,
                 token,
                 forceReRegister ? null : saved?.Token,
+                saved?.Topic,
                 ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -401,6 +407,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         FirebaseConfig firebase,
         string token,
         string? previousToken,
+        string? subscribedTopic,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(token))
@@ -410,14 +417,14 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             return false;
         }
 
-        if (string.Equals(token, previousToken, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
         try
         {
-            var request = new PushRegistrationRequest(masjidId, PlatformName, token, previousToken);
+            // Sites delivering through the hosted MasjidFeed service answer with the
+            // canonical topicKey, and this app subscribes to it locally; sites using
+            // their own Firebase project ignore the mode and subscribe the token
+            // server-side, which is why the token still accompanies the request.
+            var request = new PushRegistrationRequest(
+                masjidId, PlatformName, token, previousToken, RegistrationModeClient);
             using var message = new HttpRequestMessage(HttpMethod.Post, registrationUrl)
             {
                 Content = JsonContent.Create(request, PushJsonContext.Default.PushRegistrationRequest),
@@ -430,7 +437,31 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             Console.WriteLine($"PUSHDBG: POST status={(int)response.StatusCode}");
             response.EnsureSuccessStatusCode();
 
-            await SaveStateAsync(new PushRegistrationState(masjidId, registrationUrl, token, firebase))
+            var payload = await response.Content
+                .ReadFromJsonAsync(PushJsonContext.Default.PushRegistrationResponse, ct)
+                .ConfigureAwait(false);
+            var topic = payload?.TopicKey?.Topic;
+            if (topic is null && payload is not { Registered: true })
+            {
+                Console.WriteLine("PUSHDBG: response carried neither a topic key nor a server-side registration");
+                LogPushTopicMissing(_logger);
+                return false;
+            }
+
+            if (topic is not null)
+            {
+                await _messaging!.SubscribeToTopicAsync(topic).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(subscribedTopic) &&
+                    !string.Equals(subscribedTopic, topic, StringComparison.Ordinal))
+                {
+                    // The gateway rotated the topic; drop the stale subscription.
+                    // Failure is non-fatal because the stale topic expires on its own.
+                    await UnsubscribeTopicAsync(subscribedTopic, ct).ConfigureAwait(false);
+                }
+            }
+
+            await SaveStateAsync(new PushRegistrationState(
+                    masjidId, registrationUrl, token, firebase, topic))
                 .ConfigureAwait(false);
             return true;
         }
@@ -466,11 +497,33 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
                 await CrossFirebaseAppCheck.GetTokenAsync().ConfigureAwait(false));
             using var response = await _http.SendAsync(message, ct).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return true;
+            // Hosted-service registrations keep no server-side token, so the local
+            // topic subscription is the delivery channel that must be removed here;
+            // the DELETE still unsubscribes tokens for site-owned Firebase projects.
+            return await UnsubscribeTopicAsync(state.Topic, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogPushUnregisterFailed(_logger, ex);
+            return false;
+        }
+    }
+
+    private async Task<bool> UnsubscribeTopicAsync(string? topic, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(topic))
+        {
+            return true;
+        }
+
+        try
+        {
+            await _messaging!.UnsubscribeFromTopicAsync(topic).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogPushTopicUnsubscribeFailed(_logger, ex);
             return false;
         }
     }
@@ -576,6 +629,12 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push registration skipped: no FCM token available.")]
     private static partial void LogPushTokenMissing(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push registration response carried neither a topic key nor a server-side registration.")]
+    private static partial void LogPushTopicMissing(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push topic unsubscribe failed.")]
+    private static partial void LogPushTopicUnsubscribeFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Remote push could not be unregistered from the previous tenant.")]
     private static partial void LogPushUnregisterFailed(ILogger logger, Exception exception);
