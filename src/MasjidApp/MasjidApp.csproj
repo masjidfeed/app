@@ -43,15 +43,18 @@
 		<!-- Hosted MasjidFeed push service Firebase options (backend/api.md "Hosted
 		     MasjidFeed push service"). These are public application configuration,
 		     identical for every site because all tenants deliver through the one
-		     central Firebase project, so they are baked in at build time from the
-		     values served by https://bothellmosque.org/wp-json/masjid/v1/config
-		     instead of being read from each tenant's /config response. Override
-		     with -p:MasjidFeedFirebase*...=... if the central project ever changes. -->
-		<MasjidFeedFirebaseIosAppId Condition="'$(MasjidFeedFirebaseIosAppId)' == ''">1:275056678751:ios:8c8adc34b09c317a7a08ea</MasjidFeedFirebaseIosAppId>
+		     central Firebase project, so they are baked in at build time instead
+		     of being read from each tenant's /config response. The values come
+		     from the Firebase apps registered for THIS bundle (Project settings ▸
+		     Your apps): the app IDs served by bothellmosque.org's /config belong
+		     to the org.bothellmosque.mobile bundle and are wrong for this app.
+		     Override with -p:MasjidFeedFirebase*...=... if the central project
+		     ever changes. -->
+		<MasjidFeedFirebaseIosAppId Condition="'$(MasjidFeedFirebaseIosAppId)' == ''">1:275056678751:ios:349c8a8a5a5d6bf67a08ea</MasjidFeedFirebaseIosAppId>
 		<MasjidFeedFirebaseIosSenderId Condition="'$(MasjidFeedFirebaseIosSenderId)' == ''">275056678751</MasjidFeedFirebaseIosSenderId>
 		<MasjidFeedFirebaseIosProjectId Condition="'$(MasjidFeedFirebaseIosProjectId)' == ''">masjidapp-bcfc7</MasjidFeedFirebaseIosProjectId>
 		<MasjidFeedFirebaseIosApiKey Condition="'$(MasjidFeedFirebaseIosApiKey)' == ''">AIzaSyCO5ZKatwvR32K3-fJgI95trtMda38z-zw</MasjidFeedFirebaseIosApiKey>
-		<MasjidFeedFirebaseAndroidAppId Condition="'$(MasjidFeedFirebaseAndroidAppId)' == ''">1:275056678751:android:2c6c35227562b23c7a08ea</MasjidFeedFirebaseAndroidAppId>
+		<MasjidFeedFirebaseAndroidAppId Condition="'$(MasjidFeedFirebaseAndroidAppId)' == ''">1:275056678751:android:f4e08699af6a59097a08ea</MasjidFeedFirebaseAndroidAppId>
 		<MasjidFeedFirebaseAndroidSenderId Condition="'$(MasjidFeedFirebaseAndroidSenderId)' == ''">275056678751</MasjidFeedFirebaseAndroidSenderId>
 		<MasjidFeedFirebaseAndroidProjectId Condition="'$(MasjidFeedFirebaseAndroidProjectId)' == ''">masjidapp-bcfc7</MasjidFeedFirebaseAndroidProjectId>
 		<MasjidFeedFirebaseAndroidApiKey Condition="'$(MasjidFeedFirebaseAndroidApiKey)' == ''">AIzaSyBBYUADM2gW2FNuv-xOQNBRfj_cMOWp1s4</MasjidFeedFirebaseAndroidApiKey>
