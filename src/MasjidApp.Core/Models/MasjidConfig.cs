@@ -43,12 +43,16 @@ public sealed record MasjidConfig
     [JsonPropertyName("featureFlags")]
     public FeatureFlags? FeatureFlags { get; init; }
 
-    /// <summary>Remote push registration and per-platform Firebase configuration.</summary>
+    /// <summary>Remote push registration configuration (Firebase options are build-time constants in the app).</summary>
     [JsonPropertyName("pushNotifications")]
     public PushNotificationsConfig? PushNotifications { get; init; }
 }
 
-/// <summary>Per-tenant remote push configuration.</summary>
+/// <summary>
+/// Per-tenant remote push configuration. Firebase options are intentionally not
+/// modeled: all sites deliver through the hosted MasjidFeed push service, whose
+/// public Firebase options are identical and are baked into the app build config.
+/// </summary>
 public sealed record PushNotificationsConfig
 {
     [JsonPropertyName("enabled")]
@@ -59,51 +63,6 @@ public sealed record PushNotificationsConfig
 
     [JsonPropertyName("registrationUrl")]
     public string? RegistrationUrl { get; init; }
-
-    [JsonPropertyName("firebase")]
-    public FirebaseConfig? Firebase { get; init; }
-}
-
-/// <summary>Firebase project and platform app options for one tenant.</summary>
-public sealed record FirebaseConfig
-{
-    [JsonPropertyName("ios")]
-    public FirebaseIosConfig? Ios { get; init; }
-
-    [JsonPropertyName("android")]
-    public FirebaseAndroidConfig? Android { get; init; }
-}
-
-/// <summary>Firebase options for the iOS app.</summary>
-public sealed record FirebaseIosConfig
-{
-    [JsonPropertyName("appId")]
-    public string? AppId { get; init; }
-
-    [JsonPropertyName("senderId")]
-    public string? SenderId { get; init; }
-
-    [JsonPropertyName("projectId")]
-    public string? ProjectId { get; init; }
-
-    [JsonPropertyName("apiKey")]
-    public string? ApiKey { get; init; }
-}
-
-/// <summary>Firebase options for the Android app.</summary>
-public sealed record FirebaseAndroidConfig
-{
-    [JsonPropertyName("appId")]
-    public string? AppId { get; init; }
-
-    [JsonPropertyName("senderId")]
-    public string? SenderId { get; init; }
-
-    [JsonPropertyName("projectId")]
-    public string? ProjectId { get; init; }
-
-    [JsonPropertyName("apiKey")]
-    public string? ApiKey { get; init; }
 }
 
 /// <summary>Masjid identity (name, timezone, ID).</summary>

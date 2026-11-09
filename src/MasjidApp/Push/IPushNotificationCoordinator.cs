@@ -1,6 +1,6 @@
 namespace MasjidApp.Push;
 
-/// <summary>Coordinates per-tenant Firebase initialization, token registration, and push taps.</summary>
+/// <summary>Coordinates Firebase initialization, topic registration, and push taps.</summary>
 public interface IPushNotificationCoordinator
 {
     /// <summary>

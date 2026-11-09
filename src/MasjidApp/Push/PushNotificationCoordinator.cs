@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using MasjidApp.Core.Models;
 using MasjidApp.Core.Http;
 using MasjidApp.Core.Posts;
 using MasjidApp.Core.Push;
@@ -51,7 +50,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     private readonly SemaphoreSlim _syncLock = new(1, 1);
 #if IOS || ANDROID
     private IFirebaseCloudMessaging? _messaging;
-    private string? _initializedAppId;
+    private bool _firebaseInitialized;
 #endif
 
     public PushNotificationCoordinator(
@@ -97,8 +96,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
             if (saved is not null &&
                 (!canRegister || !string.Equals(saved.MasjidId, masjidId, StringComparison.Ordinal) ||
-                 !string.Equals(saved.RegistrationUrl, push?.RegistrationUrl, StringComparison.Ordinal) ||
-                 !SameFirebaseApp(saved.Firebase, push?.Firebase)))
+                 !string.Equals(saved.RegistrationUrl, push?.RegistrationUrl, StringComparison.Ordinal)))
             {
                 if (!await UnregisterAsync(saved, ct).ConfigureAwait(false))
                 {
@@ -107,10 +105,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 
                 SecureStorage.Default.Remove(RegistrationStateKey);
                 saved = null;
-                await ResetFirebaseAsync().ConfigureAwait(false);
             }
 
-            if (!canRegister || push?.Firebase is null)
+            if (!canRegister || push?.RegistrationUrl is not { } registrationUrl)
             {
                 return true;
             }
@@ -121,11 +118,11 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 #if IOS
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                await EnsureFirebaseAsync(push.Firebase).ConfigureAwait(false);
+                await EnsureFirebaseAsync().ConfigureAwait(false);
                 await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
             }).ConfigureAwait(false);
 #else
-            await EnsureFirebaseAsync(push.Firebase).ConfigureAwait(false);
+            await EnsureFirebaseAsync().ConfigureAwait(false);
             await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
 #endif
             var messaging = _messaging!;
@@ -136,8 +133,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             // changes, so no server-side token bookkeeping is required in client mode.
             return await RegisterAsync(
                 masjidId!,
-                push.RegistrationUrl!,
-                push.Firebase,
+                registrationUrl,
                 token,
                 forceReRegister ? null : saved?.Token,
                 saved?.Topic,
@@ -312,17 +308,11 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
     }
 
 #if IOS || ANDROID
-    private async Task EnsureFirebaseAsync(FirebaseConfig firebase)
+    private async Task EnsureFirebaseAsync()
     {
-        var appId = GetPlatformAppId(firebase);
-        if (string.Equals(_initializedAppId, appId, StringComparison.Ordinal))
+        if (_firebaseInitialized)
         {
             return;
-        }
-
-        if (_initializedAppId is not null)
-        {
-            await ResetFirebaseAsync().ConfigureAwait(false);
         }
 
 #if DEBUG
@@ -334,23 +324,21 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 #endif
 
 #if ANDROID
-        var platform = firebase.Android ?? throw new InvalidOperationException("Android Firebase configuration is missing.");
         var activity = Platform.CurrentActivity ?? throw new InvalidOperationException("No current Android activity is available.");
         var options = new FirebaseOptions.Builder()
-            .SetApplicationId(Required(platform.AppId, "appId"))
-            .SetGcmSenderId(Required(platform.SenderId, "senderId"))
-            .SetProjectId(Required(platform.ProjectId, "projectId"))
-            .SetApiKey(Required(platform.ApiKey, "apiKey"))
+            .SetApplicationId(MasjidFeedFirebase.AppId)
+            .SetGcmSenderId(MasjidFeedFirebase.SenderId)
+            .SetProjectId(MasjidFeedFirebase.ProjectId)
+            .SetApiKey(MasjidFeedFirebase.ApiKey)
             .Build();
         CrossFirebase.Initialize(activity, () => Platform.CurrentActivity!, options);
 #elif IOS
-        var platform = firebase.Ios ?? throw new InvalidOperationException("iOS Firebase configuration is missing.");
         var options = new Options(
-            Required(platform.AppId, "appId"),
-            Required(platform.SenderId, "senderId"))
+            MasjidFeedFirebase.AppId,
+            MasjidFeedFirebase.SenderId)
         {
-            ApiKey = Required(platform.ApiKey, "apiKey"),
-            ProjectId = Required(platform.ProjectId, "projectId"),
+            ApiKey = MasjidFeedFirebase.ApiKey,
+            ProjectId = MasjidFeedFirebase.ProjectId,
             BundleId = AppInfo.PackageName,
         };
         CrossFirebase.Initialize(firebaseOptions: options);
@@ -362,49 +350,12 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         _messaging.TokenChanged += OnTokenChanged;
         _messaging.NotificationReceived += OnNotificationReceived;
         _messaging.NotificationTapped += OnNotificationTapped;
-        _initializedAppId = appId;
-    }
-
-    private async Task ResetFirebaseAsync()
-    {
-        if (_messaging is not null)
-        {
-            _messaging.TokenChanged -= OnTokenChanged;
-            _messaging.NotificationReceived -= OnNotificationReceived;
-            _messaging.NotificationTapped -= OnNotificationTapped;
-            _messaging = null;
-        }
-
-#if ANDROID
-        if (Plugin.Firebase.Core.Platforms.Android.CrossFirebase.TryGetDefaultApp(out var app))
-        {
-            app.Delete();
-        }
-#elif IOS
-        if (Firebase.Core.App.DefaultInstance is { } app)
-        {
-            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            app.Delete(success =>
-            {
-                if (success)
-                {
-                    completion.TrySetResult();
-                }
-                else
-                {
-                    completion.TrySetException(new InvalidOperationException("Firebase iOS app deletion failed."));
-                }
-            });
-            await completion.Task.ConfigureAwait(false);
-        }
-#endif
-        _initializedAppId = null;
+        _firebaseInitialized = true;
     }
 
     private async Task<bool> RegisterAsync(
         string masjidId,
         string registrationUrl,
-        FirebaseConfig firebase,
         string token,
         string? previousToken,
         string? subscribedTopic,
@@ -420,9 +371,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         try
         {
             // Sites delivering through the hosted MasjidFeed service answer with the
-            // canonical topicKey, and this app subscribes to it locally; sites using
-            // their own Firebase project ignore the mode and subscribe the token
-            // server-side, which is why the token still accompanies the request.
+            // canonical topicKey, and this app subscribes to it locally. The token is
+            // not required in this mode but is sent so the payload stays valid for
+            // sites that ignore the mode.
             var request = new PushRegistrationRequest(
                 masjidId, PlatformName, token, previousToken, RegistrationModeClient);
             using var message = new HttpRequestMessage(HttpMethod.Post, registrationUrl)
@@ -461,7 +412,7 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             }
 
             await SaveStateAsync(new PushRegistrationState(
-                    masjidId, registrationUrl, token, firebase, topic))
+                    masjidId, registrationUrl, token, topic))
                 .ConfigureAwait(false);
             return true;
         }
@@ -483,9 +434,9 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         {
 #if IOS
             await MainThread.InvokeOnMainThreadAsync(
-                () => EnsureFirebaseAsync(state.Firebase)).ConfigureAwait(false);
+                () => EnsureFirebaseAsync()).ConfigureAwait(false);
 #else
-            await EnsureFirebaseAsync(state.Firebase).ConfigureAwait(false);
+            await EnsureFirebaseAsync().ConfigureAwait(false);
 #endif
             var request = new PushRegistrationRequest(state.MasjidId, PlatformName, state.Token);
             using var message = new HttpRequestMessage(HttpMethod.Delete, state.RegistrationUrl)
@@ -571,21 +522,6 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             e.Notification.ImageUrl,
             data).ConfigureAwait(false);
     }
-
-    private static string GetPlatformAppId(FirebaseConfig firebase) =>
-#if IOS
-        Required(firebase.Ios?.AppId, "ios.appId");
-#else
-        Required(firebase.Android?.AppId, "android.appId");
-#endif
-
-    private static bool SameFirebaseApp(FirebaseConfig left, FirebaseConfig? right) =>
-        right is not null && string.Equals(GetPlatformAppId(left), GetPlatformAppId(right), StringComparison.Ordinal);
-
-    private static string Required(string? value, string field) =>
-        string.IsNullOrWhiteSpace(value)
-            ? throw new InvalidOperationException($"Firebase {field} is missing.")
-            : value;
 
     private static async Task<PushRegistrationState?> LoadStateAsync()
     {

@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using MasjidApp.Core.Models;
 
 namespace MasjidApp.Push;
 
@@ -26,11 +25,12 @@ internal sealed record PushRegistrationResponse(
     [property: JsonPropertyName("topicKey")]
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PushTopicKey? TopicKey = null);
 
+/// <summary>Firebase options come from the build configuration (<see cref="MasjidFeedFirebase"/>), so only
+/// the registration coordinates and the locally subscribed topic are persisted here.</summary>
 internal sealed record PushRegistrationState(
     string MasjidId,
     string RegistrationUrl,
     string Token,
-    FirebaseConfig Firebase,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Topic = null);
 
 [JsonSerializable(typeof(PushRegistrationRequest))]

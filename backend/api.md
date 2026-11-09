@@ -122,21 +122,7 @@ Example response:
   "pushNotifications": {
     "enabled": true,
     "configured": true,
-    "registrationUrl": "https://example.org/wp-json/masjid/v1/push/registrations",
-    "firebase": {
-      "ios": {
-        "appId": "1:123456789:ios:abcdef",
-        "senderId": "123456789",
-        "projectId": "example-project",
-        "apiKey": "public-api-key"
-      },
-      "android": {
-        "appId": "1:123456789:android:abcdef",
-        "senderId": "123456789",
-        "projectId": "example-project",
-        "apiKey": "public-api-key"
-      }
-    }
+    "registrationUrl": "https://example.org/wp-json/masjid/v1/push/registrations"
   }
 }
 ```
@@ -158,11 +144,8 @@ non-empty `donationUrl` or `ramadanUrl` automatically includes
 preserved.
 
 `pushNotifications.configured` is true only when encrypted server credentials
-and both platform configurations exist. `firebase.ios.projectId` and
-`firebase.android.projectId` carry the Firebase project identifier; clients
-must supply it when initializing Firebase because Firebase Installations
-(used by FCM and App Check) rejects apps configured without it. All values
-under `pushNotifications.firebase` are public application configuration;
+and both platform configurations exist. The app ships with its own Firebase
+configuration; the API never returns Firebase application configuration, and
 service-account credentials are never returned.
 
 ## Push Registration
@@ -187,10 +170,10 @@ not require App Check.
 
 ### `POST /push/registrations`
 
-Subscribes an FCM token to this site's tenant topic. The app must initialize
-Firebase with its platform configuration returned by `/config`, obtain an App
-Check token from that same platform app, then register the FCM token. The `X-Firebase-AppCheck` header
-described above is mandatory.
+Subscribes an FCM token to this site's tenant topic. The app initializes
+Firebase with its bundled platform configuration for the declared `platform`,
+obtains an App Check token from that app, then registers the FCM token. The
+`X-Firebase-AppCheck` header described above is mandatory.
 
 ```sh
 curl --fail-with-body --silent --show-error \
@@ -208,25 +191,12 @@ curl --fail-with-body --silent --show-error \
 
 `platform` is `ios` or `android`. `previousToken` is optional; after the new
 token is subscribed successfully, it is unsubscribed to complete token
-rotation. `registrationMode` is optional and selects how a site delivering
-through the hosted MasjidFeed service registers the device (see below);
-sites using their own Firebase project ignore it. The App Check application
-ID must match the uploaded configuration for the declared platform.
+rotation. `registrationMode` is optional and selects how the device is
+registered (see below). The App Check application ID must match the uploaded
+configuration for the declared platform.
 
-Example response:
 
-```json
-{
-  "registered": true
-}
-```
-
-#### Hosted MasjidFeed push service
-
-When the site delivers push through the hosted MasjidFeed service instead of
-its own Firebase project, the server forwards the App Check token to the push
-gateway, which verifies it against the central Firebase project. Two
-registration flavors are available through the optional `registrationMode`
+Two registration flavors are available through the optional `registrationMode`
 parameter:
 
 - `server` (default): the FCM registration token is forwarded together with

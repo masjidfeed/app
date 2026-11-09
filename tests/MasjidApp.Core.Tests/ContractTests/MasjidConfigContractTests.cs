@@ -74,12 +74,6 @@ public sealed class MasjidConfigContractTests
 
         config!.PushNotifications.Should().NotBeNull();
         config.PushNotifications!.RegistrationUrl.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase!.Ios!.AppId.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase.Ios.SenderId.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase.Ios.ApiKey.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase.Android!.AppId.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase.Android.SenderId.Should().NotBeNullOrWhiteSpace();
-        config.PushNotifications.Firebase.Android.ApiKey.Should().NotBeNullOrWhiteSpace();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -39,7 +39,67 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+
+		<!-- Hosted MasjidFeed push service Firebase options (backend/api.md "Hosted
+		     MasjidFeed push service"). These are public application configuration,
+		     identical for every site because all tenants deliver through the one
+		     central Firebase project, so they are baked in at build time from the
+		     values served by https://bothellmosque.org/wp-json/masjid/v1/config
+		     instead of being read from each tenant's /config response. Override
+		     with -p:MasjidFeedFirebase*...=... if the central project ever changes. -->
+		<MasjidFeedFirebaseIosAppId Condition="'$(MasjidFeedFirebaseIosAppId)' == ''">1:275056678751:ios:8c8adc34b09c317a7a08ea</MasjidFeedFirebaseIosAppId>
+		<MasjidFeedFirebaseIosSenderId Condition="'$(MasjidFeedFirebaseIosSenderId)' == ''">275056678751</MasjidFeedFirebaseIosSenderId>
+		<MasjidFeedFirebaseIosProjectId Condition="'$(MasjidFeedFirebaseIosProjectId)' == ''">masjidapp-bcfc7</MasjidFeedFirebaseIosProjectId>
+		<MasjidFeedFirebaseIosApiKey Condition="'$(MasjidFeedFirebaseIosApiKey)' == ''">AIzaSyCO5ZKatwvR32K3-fJgI95trtMda38z-zw</MasjidFeedFirebaseIosApiKey>
+		<MasjidFeedFirebaseAndroidAppId Condition="'$(MasjidFeedFirebaseAndroidAppId)' == ''">1:275056678751:android:2c6c35227562b23c7a08ea</MasjidFeedFirebaseAndroidAppId>
+		<MasjidFeedFirebaseAndroidSenderId Condition="'$(MasjidFeedFirebaseAndroidSenderId)' == ''">275056678751</MasjidFeedFirebaseAndroidSenderId>
+		<MasjidFeedFirebaseAndroidProjectId Condition="'$(MasjidFeedFirebaseAndroidProjectId)' == ''">masjidapp-bcfc7</MasjidFeedFirebaseAndroidProjectId>
+		<MasjidFeedFirebaseAndroidApiKey Condition="'$(MasjidFeedFirebaseAndroidApiKey)' == ''">AIzaSyBBYUADM2gW2FNuv-xOQNBRfj_cMOWp1s4</MasjidFeedFirebaseAndroidApiKey>
 	</PropertyGroup>
+
+	<!-- Select the platform-specific Firebase options and generate the
+	     MasjidFeedFirebase constants consumed by PushNotificationCoordinator.
+	     Mac Catalyst shares the iOS options, matching the coordinator's
+	     #if IOS compilation. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' Or $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<MasjidFeedFirebaseAppId>$(MasjidFeedFirebaseIosAppId)</MasjidFeedFirebaseAppId>
+		<MasjidFeedFirebaseSenderId>$(MasjidFeedFirebaseIosSenderId)</MasjidFeedFirebaseSenderId>
+		<MasjidFeedFirebaseProjectId>$(MasjidFeedFirebaseIosProjectId)</MasjidFeedFirebaseProjectId>
+		<MasjidFeedFirebaseApiKey>$(MasjidFeedFirebaseIosApiKey)</MasjidFeedFirebaseApiKey>
+	</PropertyGroup>
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<MasjidFeedFirebaseAppId>$(MasjidFeedFirebaseAndroidAppId)</MasjidFeedFirebaseAppId>
+		<MasjidFeedFirebaseSenderId>$(MasjidFeedFirebaseAndroidSenderId)</MasjidFeedFirebaseSenderId>
+		<MasjidFeedFirebaseProjectId>$(MasjidFeedFirebaseAndroidProjectId)</MasjidFeedFirebaseProjectId>
+		<MasjidFeedFirebaseApiKey>$(MasjidFeedFirebaseAndroidApiKey)</MasjidFeedFirebaseApiKey>
+	</PropertyGroup>
+
+	<Target Name="_GenerateMasjidFeedFirebaseOptions" BeforeTargets="CoreCompile" Condition="'$(TargetFramework)' != ''">
+		<ItemGroup>
+			<!-- %3B is a literal semicolon; MSBuild would otherwise treat it as an item separator. -->
+			<_MasjidFeedFirebaseLine Include="// &lt;auto-generated /&gt;" />
+			<_MasjidFeedFirebaseLine Include="// Firebase options for the hosted MasjidFeed push service, baked in at build" />
+			<_MasjidFeedFirebaseLine Include="// time from the MasjidFeedFirebase* properties in MasjidApp.csproj." />
+			<_MasjidFeedFirebaseLine Include="namespace MasjidApp.Push%3B" />
+			<_MasjidFeedFirebaseLine Include="internal static class MasjidFeedFirebase" />
+			<_MasjidFeedFirebaseLine Include="{" />
+			<_MasjidFeedFirebaseLine Include="    public const string AppId = &quot;$(MasjidFeedFirebaseAppId)&quot;%3B" />
+			<_MasjidFeedFirebaseLine Include="    public const string SenderId = &quot;$(MasjidFeedFirebaseSenderId)&quot;%3B" />
+			<_MasjidFeedFirebaseLine Include="    public const string ProjectId = &quot;$(MasjidFeedFirebaseProjectId)&quot;%3B" />
+			<_MasjidFeedFirebaseLine Include="    public const string ApiKey = &quot;$(MasjidFeedFirebaseApiKey)&quot;%3B" />
+			<_MasjidFeedFirebaseLine Include="}" />
+		</ItemGroup>
+		<WriteLinesToFile
+			File="$(IntermediateOutputPath)MasjidFeedFirebaseOptions.g.cs"
+			Lines="@(_MasjidFeedFirebaseLine)"
+			Overwrite="true"
+			WriteOnlyWhenDifferent="true"
+			Encoding="UTF-8" />
+		<ItemGroup>
+			<Compile Include="$(IntermediateOutputPath)MasjidFeedFirebaseOptions.g.cs" />
+			<FileWrites Include="$(IntermediateOutputPath)MasjidFeedFirebaseOptions.g.cs" />
+		</ItemGroup>
+	</Target>
 
 	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 		<!-- Launcher aliases can be toggled at runtime for tenant branding. Always run the
