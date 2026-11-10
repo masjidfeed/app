@@ -17,6 +17,40 @@ public partial class RamadanSectionView : ContentView
 {
     private RamadanViewModel? ViewModel => BindingContext as RamadanViewModel;
 
+    public RamadanSectionView()
+    {
+        InitializeComponent();
+
+        // The Home shell carousel assigns the template ROOT's BindingContext directly
+        // to the item (HomeShellCategoryPage). Whether this view's own markup
+        // BindingContext binding then evaluates correctly depends on the order of
+        // that stomp vs. template-content binding initialization; when the item is
+        // materialized during the CategoryPages rebuild (first config load), the
+        // binding can be evaluated while detached and never re-evaluated, leaving
+        // the section blank (every child binding dead). Resolve the VM
+        // deterministically instead: on every context/parent change, if this view
+        // does not hold the RamadanViewModel, take it from the shell's VM.
+        BindingContextChanged += (_, _) => ResolveBindingContext();
+        ParentChanged += (_, _) => ResolveBindingContext();
+    }
+
+    private void ResolveBindingContext()
+    {
+        if (BindingContext is RamadanViewModel)
+        {
+            return;
+        }
+
+        for (Element? element = Parent; element is not null; element = element.Parent)
+        {
+            if (element.BindingContext is HomeShellViewModel shell)
+            {
+                BindingContext = shell.Ramadan;
+                return;
+            }
+        }
+    }
+
     private async void OnRamadanWebViewNavigating(object? sender, WebNavigatingEventArgs e)
     {
         var viewModel = ViewModel;
