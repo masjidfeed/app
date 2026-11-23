@@ -65,12 +65,12 @@ public sealed partial class AppIconViewModel : ViewModelBase
 
         options.Add(new AppIconOption(
             AppIconPreference.Dark,
-            "MasjidFeed Dark",
+            "Dark",
             ImageSource.FromFile("setup_logo_dark.png"),
             isSelected: selection == AppIconPreference.Dark));
         options.Add(new AppIconOption(
             AppIconPreference.Light,
-            "MasjidFeed Light",
+            "Light",
             ImageSource.FromFile("setup_logo_light.png"),
             isSelected: selection == AppIconPreference.Light));
         Options = options;
