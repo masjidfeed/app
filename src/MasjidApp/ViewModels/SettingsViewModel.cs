@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MasjidApp.Core.Configuration;
 using MasjidApp.Core.Services;
 using MasjidApp.Core.Theming;
 using MasjidApp.Localization;
@@ -31,6 +32,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IPushNotificationSettingsService _pushNotificationSettings;
     private readonly IAlertService _alerts;
     private readonly IDeviceNotificationSettings _deviceNotificationSettings;
+    private readonly IAppIconService _appIconService;
 
     /// <summary>The currently selected app theme (FR-ST-03).</summary>
     [ObservableProperty]
@@ -155,7 +157,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IPrayerReminderSettingsService prayerReminderSettings,
         IPushNotificationSettingsService pushNotificationSettings,
         IAlertService alerts,
-        IDeviceNotificationSettings deviceNotificationSettings)
+        IDeviceNotificationSettings deviceNotificationSettings,
+        IAppIconService appIconService)
     {
         _preferences = preferences;
         _themeService = themeService;
@@ -166,6 +169,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _pushNotificationSettings = pushNotificationSettings;
         _alerts = alerts;
         _deviceNotificationSettings = deviceNotificationSettings;
+        _appIconService = appIconService;
 
         Title = "Settings";
 
@@ -193,6 +197,22 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private Task OpenAppearanceAsync() =>
         _navigation.GoToAsync(Routes.Appearance);
+
+    /// <summary>Opens the dedicated app icon selection page.</summary>
+    [RelayCommand]
+    private Task OpenAppIconAsync() =>
+        _navigation.GoToAsync(Routes.AppIcon);
+
+    /// <summary>The app icon choice shown on the Settings disclosure row.</summary>
+    public string SelectedAppIconDisplay =>
+        _appIconService.Current switch
+        {
+            AppIconPreference.Light => "MasjidFeed Light",
+            AppIconPreference.Dark => "MasjidFeed Dark",
+            _ => TenantBranding.Get(_masjidContext.ActiveEntry) is not null
+                ? _masjidContext.ActiveEntry?.Name ?? "MasjidFeed"
+                : "MasjidFeed Dark",
+        };
 
     /// <summary>Opens the dedicated iqama reminder lead-time selection page.</summary>
     [RelayCommand]
@@ -235,6 +255,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _telemetry.SetConsent(value);
 
     public void RefreshTheme() => SelectedTheme = _themeService.Current;
+
+    /// <summary>Recomputes the app-icon disclosure value after returning from the drill-down.</summary>
+    public void RefreshAppIcon() => OnPropertyChanged(nameof(SelectedAppIconDisplay));
 
     /// <summary>Refreshes reminder preferences after returning from the lead-time drill-down.</summary>
     public void RefreshPrayerReminderSettings()

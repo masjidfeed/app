@@ -33,6 +33,9 @@ public static class Routes
     /// <summary>Theme selection drill-down from Settings (FR-ST-03).</summary>
     public const string Appearance = "appearance";
 
+    /// <summary>Launcher icon selection drill-down from Settings.</summary>
+    public const string AppIcon = "app-icon";
+
     /// <summary>Iqama reminder lead-time drill-down from Settings (FR-PT-10).</summary>
     public const string PrayerReminderLeadTime = "prayer-reminder-lead-time";
 

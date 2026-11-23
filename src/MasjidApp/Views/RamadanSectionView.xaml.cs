@@ -71,6 +71,7 @@ public partial class RamadanSectionView : ContentView
 
         e.Cancel = true;
         SetWebLoading(false);
+        RamadanRefreshView.IsRefreshing = false;
 
         if (action == DonationNavigationAction.OpenInSystemBrowser &&
             DonationNavigationPolicy.GetSafeDonationUri(e.Url) is { } externalUri)
@@ -91,6 +92,7 @@ public partial class RamadanSectionView : ContentView
     private async void OnRamadanWebViewNavigated(object? sender, WebNavigatedEventArgs e)
     {
         SetWebLoading(false);
+        RamadanRefreshView.IsRefreshing = false;
         RamadanErrorPanel.IsVisible = e.Result is not WebNavigationResult.Success
             and not WebNavigationResult.Cancel;
 
@@ -127,7 +129,21 @@ public partial class RamadanSectionView : ContentView
         WebViewProcessTerminatedEventArgs e)
     {
         SetWebLoading(false);
+        RamadanRefreshView.IsRefreshing = false;
         RamadanErrorPanel.IsVisible = true;
+    }
+
+    private void OnRamadanRefresh(object? sender, EventArgs e)
+    {
+        if (!RamadanWebView.IsVisible)
+        {
+            RamadanRefreshView.IsRefreshing = false;
+            return;
+        }
+
+        RamadanErrorPanel.IsVisible = false;
+        SetWebLoading(true);
+        RamadanWebView.Reload();
     }
 
     private void OnRetryClicked(object? sender, EventArgs e)

@@ -131,6 +131,10 @@
 		<MauiIcon Include="Resources\AppIcon\appicon.png" />
 		<MauiImage Include="Resources\AppIcon\appicon.png" Link="setup_logo_dark.png" />
 		<MauiImage Include="Resources\AppIcon\appicon-white.png" Link="setup_logo_light.png" />
+		<!-- Tenant launcher-icon previews for the Settings app-icon picker.
+		     Generated 1024px copies from branded_resources; downscaled so the previews
+		     stay small. Referenced as "<id>_appicon.png" by AppIconViewModel. -->
+		<MauiImage Include="Resources\AppIcon\*_appicon.png" Resize="True" BaseSize="104,104" />
 
 		<!-- Splash Screen - plain white (FR-ST-08).
 		     iOS renders it from LaunchScreen.storyboard and Android from

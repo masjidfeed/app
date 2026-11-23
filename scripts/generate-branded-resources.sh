@@ -370,4 +370,21 @@ for index in "${!tenant_ids[@]}"; do
     done
 done
 
+# The MasjidFeed light launcher icon is a generic alternate icon (Settings → App
+# icon), not tenant-specific: iOS declares MASJIDFEED_LIGHT and Android declares
+# the .MasjidFeedLightLauncher alias, both consuming the sizes generated here.
+light_source="$root/src/MasjidApp/Resources/AppIcon/appicon-white.png"
+[[ -f "$light_source" ]] || fail "MasjidFeed light icon source does not exist"
+
+for size_target in \
+    "1024:$root/src/MasjidApp/Platforms/Android/Resources/mipmap/masjidfeed_light_appicon.png" \
+    "120:$root/src/MasjidApp/Platforms/iOS/AlternateIcons/masjidfeed_light_icon@2x.png" \
+    "180:$root/src/MasjidApp/Platforms/iOS/AlternateIcons/masjidfeed_light_icon@3x.png"; do
+    size="${size_target%%:*}"
+    target="${size_target#*:}"
+    generated_icon="$temporary_directory/masjidfeed_light_${size}_$(basename -- "$target")"
+    run_sips --resampleHeightWidth "$size" "$size" "$light_source" --out "$generated_icon"
+    sync_icon "$generated_icon" "$target"
+done
+
 "$up_to_date" || exit 1

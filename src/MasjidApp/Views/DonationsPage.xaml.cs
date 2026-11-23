@@ -65,6 +65,7 @@ public partial class DonationsPage : ContentPage
 
         e.Cancel = true;
         SetWebLoading(false);
+        DonationRefreshView.IsRefreshing = false;
 
         if (action == DonationNavigationAction.OpenInSystemBrowser &&
             DonationNavigationPolicy.GetSafeDonationUri(e.Url) is { } externalUri)
@@ -86,6 +87,7 @@ public partial class DonationsPage : ContentPage
     private async void OnDonationWebViewNavigated(object? sender, WebNavigatedEventArgs e)
     {
         SetWebLoading(false);
+        DonationRefreshView.IsRefreshing = false;
         DonationErrorPanel.IsVisible = e.Result is not WebNavigationResult.Success
             and not WebNavigationResult.Cancel;
 
@@ -122,7 +124,21 @@ public partial class DonationsPage : ContentPage
         WebViewProcessTerminatedEventArgs e)
     {
         SetWebLoading(false);
+        DonationRefreshView.IsRefreshing = false;
         DonationErrorPanel.IsVisible = true;
+    }
+
+    private void OnDonationRefresh(object? sender, EventArgs e)
+    {
+        if (!DonationWebView.IsVisible)
+        {
+            DonationRefreshView.IsRefreshing = false;
+            return;
+        }
+
+        DonationErrorPanel.IsVisible = false;
+        SetWebLoading(true);
+        DonationWebView.Reload();
     }
 
     private void OnRetryClicked(object? sender, EventArgs e)

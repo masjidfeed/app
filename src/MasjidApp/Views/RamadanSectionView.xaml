@@ -14,14 +14,19 @@
 
     <Grid SafeAreaEdges="Container,Container,Container,None">
         <Grid SafeAreaEdges="None">
-            <controls:RamadanWebView
-                x:Name="RamadanWebView"
-                Source="{Binding RamadanUrl}"
+            <RefreshView
+                x:Name="RamadanRefreshView"
                 IsVisible="{Binding HasRamadanUrl}"
-                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
-                Navigating="OnRamadanWebViewNavigating"
-                Navigated="OnRamadanWebViewNavigated"
-                ProcessTerminated="OnRamadanWebViewProcessTerminated" />
+                Refreshing="OnRamadanRefresh">
+                <controls:RamadanWebView
+                    x:Name="RamadanWebView"
+                    Source="{Binding RamadanUrl}"
+                    IsVisible="{Binding HasRamadanUrl}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    Navigating="OnRamadanWebViewNavigating"
+                    Navigated="OnRamadanWebViewNavigated"
+                    ProcessTerminated="OnRamadanWebViewProcessTerminated" />
+            </RefreshView>
 
             <ActivityIndicator
                 IsRunning="{Binding IsBusy}"

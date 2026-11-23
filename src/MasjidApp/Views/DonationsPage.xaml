@@ -14,14 +14,19 @@
 
     <Grid SafeAreaEdges="Container,Container,Container,None">
         <Grid SafeAreaEdges="None">
-            <controls:DonationWebView
-                x:Name="DonationWebView"
-                Source="{Binding DonationUrl}"
+            <RefreshView
+                x:Name="DonationRefreshView"
                 IsVisible="{Binding HasDonationUrl}"
-                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
-                Navigating="OnDonationWebViewNavigating"
-                Navigated="OnDonationWebViewNavigated"
-                ProcessTerminated="OnDonationWebViewProcessTerminated" />
+                Refreshing="OnDonationRefresh">
+                <controls:DonationWebView
+                    x:Name="DonationWebView"
+                    Source="{Binding DonationUrl}"
+                    IsVisible="{Binding HasDonationUrl}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+                    Navigating="OnDonationWebViewNavigating"
+                    Navigated="OnDonationWebViewNavigated"
+                    ProcessTerminated="OnDonationWebViewProcessTerminated" />
+            </RefreshView>
 
             <ActivityIndicator
                 IsRunning="{Binding IsBusy}"

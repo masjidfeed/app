@@ -25,6 +25,7 @@ public partial class SettingsPage : ContentPage
     {
         base.OnAppearing();
         _viewModel.RefreshTheme();
+        _viewModel.RefreshAppIcon();
         _viewModel.RefreshPrayerReminderSettings();
         await _viewModel.RefreshPushNotificationSettingsAsync();
         _isVisible = true;

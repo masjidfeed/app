@@ -301,6 +301,7 @@ public static class MauiProgram
         // ── Batch A4 ──────────────────────────────────────────────────────────
         services.AddTransient<PrayerTimesViewModel>();
         services.AddTransient<AppearanceViewModel>();
+        services.AddTransient<AppIconViewModel>();
         services.AddTransient<PrayerReminderLeadTimeViewModel>();
 
         // Shell + Views (resolved through DI by the Shell when navigating).
@@ -326,6 +327,7 @@ public static class MauiProgram
         services.AddTransient<ParkingPage>();
         services.AddTransient<SettingsPage>();
         services.AddTransient<AppearancePage>();
+        services.AddTransient<AppIconPage>();
         services.AddTransient<PrayerReminderLeadTimePage>();
         services.AddTransient<BrandedSplashPage>();
         services.AddTransient<PrayerTimesPage>();

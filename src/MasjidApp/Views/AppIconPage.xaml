@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MasjidApp.Views.AppIconPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MasjidApp.ViewModels"
+    x:DataType="vm:AppIconViewModel"
+    Title="{Binding Title}"
+    Background="{AppThemeBinding Light={StaticResource PageBackground}, Dark={StaticResource OffBlack}}">
+
+    <ScrollView>
+        <Border
+            Padding="16,20"
+            Margin="16,24"
+            StrokeThickness="0"
+            StrokeShape="RoundRectangle 8"
+            Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
+            VerticalOptions="Start">
+            <FlexLayout
+                BindableLayout.ItemsSource="{Binding Options}"
+                Direction="Row"
+                Wrap="NoWrap"
+                JustifyContent="Center">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AppIconOption">
+                        <VerticalStackLayout Spacing="8" WidthRequest="96" Margin="8,0">
+                            <VerticalStackLayout.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AppIconViewModel}}, Path=SelectCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </VerticalStackLayout.GestureRecognizers>
+                            <Grid
+                                WidthRequest="88"
+                                HeightRequest="88"
+                                HorizontalOptions="Center"
+                                SemanticProperties.Description="{Binding Label}">
+                                <Border
+                                    Padding="0"
+                                    StrokeShape="RoundRectangle 20"
+                                    StrokeThickness="1"
+                                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                                    <Image Source="{Binding Icon}" Aspect="AspectFill" />
+                                    <Border.Triggers>
+                                        <DataTrigger
+                                            TargetType="Border"
+                                            Binding="{Binding IsSelected}"
+                                            Value="True">
+                                            <Setter Property="Stroke" Value="{DynamicResource ActivePrimaryColor}" />
+                                            <Setter Property="StrokeThickness" Value="3" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                </Border>
+                                <!-- iOS-style checkmark badge for the selected icon. -->
+                                <Border
+                                    IsVisible="{Binding IsSelected}"
+                                    WidthRequest="26"
+                                    HeightRequest="26"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 13"
+                                    BackgroundColor="{DynamicResource ActivePrimaryColor}"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="End"
+                                    TranslationX="4"
+                                    TranslationY="4">
+                                    <Label
+                                        Text="✓"
+                                        TextColor="White"
+                                        FontSize="14"
+                                        FontAttributes="Bold"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+                            <Label
+                                Text="{Binding Label}"
+                                Style="{StaticResource TextCaption}"
+                                HorizontalTextAlignment="Center"
+                                MaxLines="2"
+                                LineBreakMode="TailTruncation"
+                                SemanticProperties.Description="{Binding Label}" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+        </Border>
+    </ScrollView>
+</ContentPage>

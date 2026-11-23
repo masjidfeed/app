@@ -127,7 +127,9 @@ public partial class AppShell : Shell
 
     private void OnActiveMasjidChanged(object? sender, EventArgs e)
     {
-        _ = _appIconService.ApplyAsync(TenantBranding.Get(_context.ActiveEntry));
+        _ = _appIconService.ApplyAsync(
+            _appIconService.Current,
+            TenantBranding.Get(_context.ActiveEntry));
 
         // Ignore switches that arrive before the Shell is loaded; OnShellLoaded
         // performs the initial pass for the already-active masjid.
@@ -152,6 +154,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.Settings, typeof(SettingsPage));
         Routing.RegisterRoute(Routes.Notifications, typeof(NotificationsPage));
         Routing.RegisterRoute(Routes.Appearance, typeof(AppearancePage));
+        Routing.RegisterRoute(Routes.AppIcon, typeof(AppIconPage));
         Routing.RegisterRoute(Routes.PrayerReminderLeadTime, typeof(PrayerReminderLeadTimePage));
         Routing.RegisterRoute(Routes.PostDetail, typeof(PostDetailPage));
         Routing.RegisterRoute(Routes.EventDetail, typeof(PostDetailPage));

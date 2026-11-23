@@ -88,7 +88,7 @@ public partial class SetupPage : ContentPage
         MainThread.BeginInvokeOnMainThread(async () =>
         {
             var branding = TenantBranding.Get(_masjidContext.ActiveEntry);
-            await _appIconService.ApplyAsync(branding);
+            await _appIconService.ApplyAsync(_appIconService.Current, branding);
             if (Application.Current?.Windows is { Count: > 0 } windows)
             {
                 windows[0].Page = branding is not null

@@ -56,7 +56,7 @@ public partial class App : Application
         // FR-ST-08: native platform launch screens remain plain white until MAUI starts.
         var activeEntry = _masjidContext.ActiveEntry;
         var branding = TenantBranding.Get(activeEntry);
-        _ = _appIconService.ApplyAsync(branding);
+        _ = _appIconService.ApplyAsync(_appIconService.Current, branding);
 
         Page rootPage = !WelcomeState.WasShown
             ? _services.GetRequiredService<WelcomePage>()

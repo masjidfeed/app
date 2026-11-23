@@ -11,9 +11,30 @@ namespace MasjidApp.Services;
 /// <inheritdoc/>
 public sealed class AppIconService : IAppIconService
 {
+    private const string PreferenceKey = "app_icon_preference";
+
+    private readonly IUserPreferences _preferences;
+
+    public AppIconService(IUserPreferences preferences) => _preferences = preferences;
+
     /// <inheritdoc/>
-    public Task ApplyAsync(TenantBrandingDefinition? branding)
+    public AppIconPreference Current
     {
+        get
+        {
+            var stored = _preferences.GetValue(PreferenceKey, (int)AppIconPreference.Masjid);
+            return Enum.IsDefined(typeof(AppIconPreference), stored)
+                ? (AppIconPreference)stored
+                : AppIconPreference.Masjid;
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task ApplyAsync(AppIconPreference preference, TenantBrandingDefinition? branding)
+    {
+        _preferences.SetValue(PreferenceKey, (int)preference);
+        var icon = AppIconResolver.Resolve(preference, branding);
+
 #if ANDROID
         var context = Android.App.Application.Context;
         var packageManager = context.PackageManager;
@@ -23,20 +44,23 @@ public sealed class AppIconService : IAppIconService
             return Task.CompletedTask;
         }
 
-        SetAlias(packageManager, packageName, ".GenericLauncher", branding is null);
-        foreach (var definition in TenantBranding.All)
+        // Enable exactly the resolved alias and disable every other launcher alias,
+        // including the ones compiled for tenants the user has never selected.
+        var aliases = new List<string>
         {
-            SetAlias(
-            packageManager,
-            packageName,
-            $".{definition.AndroidLauncherAlias}",
-            definition == branding);
+            AppIconResolver.AndroidDefaultLauncherAlias,
+            AppIconResolver.AndroidLightLauncherAlias,
+        };
+        aliases.AddRange(TenantBranding.All.Select(definition => $".{definition.AndroidLauncherAlias}"));
+        foreach (var alias in aliases)
+        {
+            SetAlias(packageManager, packageName, alias, alias == icon.AndroidLauncherAlias);
         }
 #elif IOS
         if (UIApplication.SharedApplication.SupportsAlternateIcons)
         {
             UIApplication.SharedApplication.SetAlternateIconName(
-            branding?.IosAlternateIconName,
+                icon.IosAlternateIconName,
                 static _ => { });
         }
 #endif
