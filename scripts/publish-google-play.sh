@@ -21,7 +21,6 @@
 #                                 src/MasjidApp/app-version.txt, the same file the project
 #                                 builds from.
 #   PUBLISH_ARTIFACTS_DIR         Optional output directory for the AAB and safe diagnostics.
-#   NATIVE_SYMBOLS_ZIP            Optional output path for Play native debug symbols.
 #   PUBLISHING_KEY_VAULT_NAME     Azure Key Vault holding release credentials. Defaults to
 #                                 masjidfeed-publish; set to empty to use local credentials.
 set -euo pipefail
@@ -42,10 +41,9 @@ GOOGLE_PLAY_TRACK="${GOOGLE_PLAY_TRACK:-internal}"
 GOOGLE_PLAY_RELEASE_STATUS="${GOOGLE_PLAY_RELEASE_STATUS:-draft}"
 PUBLISHING_KEY_VAULT_NAME="${PUBLISHING_KEY_VAULT_NAME:-masjidfeed-publish}"
 KEY_VAULT_TEMP=""
-
-export FASTLANE_OPT_OUT_USAGE=1
-export FASTLANE_SKIP_UPDATE_CHECK=1
-export FASTLANE_DISABLE_ANIMATION=1
+PLAY_API="https://androidpublisher.googleapis.com"
+ACCESS_TOKEN=""
+EDIT_ID=""
 
 fail() {
   echo "$*" >&2
@@ -58,6 +56,22 @@ require_file() {
 
 cleanup_key_vault_credentials() {
   [ -n "$KEY_VAULT_TEMP" ] && rm -rf "$KEY_VAULT_TEMP"
+}
+
+# Play allows only one in-progress edit per app; discard an uncommitted edit so a
+# failed upload never blocks the next run. Always chained with the Key Vault cleanup.
+cleanup_play_edit() {
+  if [ -n "$EDIT_ID" ]; then
+    curl -fsS --max-time 60 -X DELETE \
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID" >/dev/null 2>&1 || true
+    EDIT_ID=""
+  fi
+}
+
+cleanup() {
+  cleanup_play_edit
+  cleanup_key_vault_credentials
 }
 
 download_key_vault_secret() {
@@ -84,7 +98,7 @@ if [ -n "$PUBLISHING_KEY_VAULT_NAME" ]; then
     fail "base64 is required when PUBLISHING_KEY_VAULT_NAME is set."
 
   KEY_VAULT_TEMP=$(mktemp -d)
-  trap cleanup_key_vault_credentials EXIT
+  trap cleanup EXIT
 
   echo "==> Downloading Google Play credentials from Key Vault $PUBLISHING_KEY_VAULT_NAME"
   download_key_vault_secret android-upload-keystore-base64 "$KEY_VAULT_TEMP/keystore.base64"
@@ -118,7 +132,7 @@ case "$GOOGLE_PLAY_RELEASE_STATUS" in
   *) fail "GOOGLE_PLAY_RELEASE_STATUS must be draft or completed." ;;
 esac
 
-for command in dotnet jarsigner keytool perl unzip zip; do
+for command in dotnet jarsigner keytool perl jq openssl curl; do
   command -v "$command" >/dev/null 2>&1 || fail "Required command not found: $command"
 done
 
@@ -210,27 +224,12 @@ AAB_COUNT=$(find "$PUBLISH_DIR" -maxdepth 1 -type f -name '*-Signed.aab' | wc -l
 AAB=$(find "$PUBLISH_DIR" -maxdepth 1 -type f -name '*-Signed.aab' -print)
 echo "Bundle: $AAB"
 
-NATIVE_SYMBOLS_ZIP="${NATIVE_SYMBOLS_ZIP:-$PUBLISH_DIR/native-debug-symbols.zip}"
-SYMBOLS_STAGING=$(mktemp -d)
-if ! unzip -qq "$AAB" 'base/lib/*/*.so' -d "$SYMBOLS_STAGING" ||
-   [ -z "$(find "$SYMBOLS_STAGING/base/lib" -type f -name '*.so' -print -quit)" ]; then
-  rm -rf "$SYMBOLS_STAGING"
-  fail "No native libraries found in $AAB for Play symbol upload."
-fi
-rm -f "$NATIVE_SYMBOLS_ZIP"
-if ! (
-  cd "$SYMBOLS_STAGING/base"
-  zip -q -r "$NATIVE_SYMBOLS_ZIP" lib
-); then
-  rm -rf "$SYMBOLS_STAGING"
-  fail "Could not create Play native debug symbols at $NATIVE_SYMBOLS_ZIP."
-fi
-rm -rf "$SYMBOLS_STAGING"
-echo "Native debug symbols: $NATIVE_SYMBOLS_ZIP"
+MAPPING_FILE="$PUBLISH_DIR/mapping.txt"
+[ -s "$MAPPING_FILE" ] || MAPPING_FILE=""
+[ -n "$MAPPING_FILE" ] && echo "ProGuard mapping: $MAPPING_FILE"
 
 echo "==> Step 4: verify bundle"
 jarsigner -verify -verbose -certs "$AAB" >/dev/null
-unzip -tq "$NATIVE_SYMBOLS_ZIP" >/dev/null
 
 KEYSTORE_SHA256=$(keytool -list -v \
   -keystore "$ANDROID_KEYSTORE" \
@@ -252,31 +251,106 @@ echo "  OK   package and versionCode match the project"
 
 if [ -n "${PUBLISH_ARTIFACTS_DIR:-}" ]; then
   cp "$AAB" "$PUBLISH_ARTIFACTS_DIR/"
-  cp "$NATIVE_SYMBOLS_ZIP" "$PUBLISH_ARTIFACTS_DIR/"
+  [ -n "$MAPPING_FILE" ] && cp "$MAPPING_FILE" "$PUBLISH_ARTIFACTS_DIR/"
   cp "$MERGED_MANIFEST" "$PUBLISH_ARTIFACTS_DIR/AndroidManifest.xml"
   keytool -printcert -jarfile "$AAB" > "$PUBLISH_ARTIFACTS_DIR/upload-certificate.txt"
   grep -o 'android.permission.[^" ]*' "$MERGED_MANIFEST" |
     sort -u > "$PUBLISH_ARTIFACTS_DIR/permissions.txt"
 fi
 
+b64url() {
+  openssl base64 -A | tr '+/' '-_' | tr -d '=\n'
+}
+
+mint_google_play_access_token() {
+  local client_email private_key now header claims signature response
+  client_email=$(jq -r .client_email "$GOOGLE_PLAY_JSON_KEY")
+  private_key=$(jq -r .private_key "$GOOGLE_PLAY_JSON_KEY")
+  [ "$client_email" != "null" ] && [ -n "$client_email" ] ||
+    fail "Service account JSON has no client_email: $GOOGLE_PLAY_JSON_KEY"
+  [ "$private_key" != "null" ] && [ -n "$private_key" ] ||
+    fail "Service account JSON has no private_key: $GOOGLE_PLAY_JSON_KEY"
+  now=$(date +%s)
+  header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+  claims=$(printf '{"iss":"%s","scope":"https://www.googleapis.com/auth/androidpublisher","aud":"https://oauth2.googleapis.com/token","exp":%s,"iat":%s}' \
+    "$client_email" "$((now + 3600))" "$now" | b64url)
+  signature=$(printf '%s.%s' "$header" "$claims" |
+    openssl dgst -sha256 -sign <(printf '%s' "$private_key") -binary | b64url)
+  response=$(curl -fsS --max-time 60 \
+    -d 'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer' \
+    --data-urlencode "assertion=$header.$claims.$signature" \
+    https://oauth2.googleapis.com/token) ||
+    fail "Could not mint a Google Play access token from the service account."
+  printf '%s' "$response" | jq -r .access_token
+}
+
+# Play only accepts deobfuscation files for a bundle inside the same edit that uploads
+# the bundle, so the AAB and its R8 mapping.txt are uploaded into one edit here instead
+# of via Fastlane (whose --mapping flag also rejects files when the bundle was already
+# committed in an earlier edit). Native/AOT .so debug symbols are stripped by the .NET
+# Android toolchain in Release, so there is nothing valid to upload for nativeCode.
+upload_to_google_play() {
+  local bundles_response bundle_version current_releases new_releases
+
+  ACCESS_TOKEN=$(mint_google_play_access_token)
+  EDIT_ID=$(curl -fsS --max-time 60 -X POST \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{}' \
+    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits" | jq -r .id)
+  [ -n "$EDIT_ID" ] && [ "$EDIT_ID" != "null" ] ||
+    fail "Could not create a Google Play edit for the upload."
+
+  echo "Uploading AAB (versionCode $NEW_BUILD)..."
+  bundles_response=$(curl -fsS --max-time 900 -X POST \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -H 'Content-Type: application/octet-stream' \
+    --data-binary "@$AAB" \
+    "$PLAY_API/upload/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/bundles?uploadType=media") ||
+    fail "Google Play rejected the AAB upload."
+  bundle_version=$(printf '%s' "$bundles_response" | jq -r .versionCode)
+  [ "$bundle_version" = "$NEW_BUILD" ] ||
+    fail "Google Play assigned versionCode $bundle_version instead of $NEW_BUILD."
+
+  if [ -n "$MAPPING_FILE" ]; then
+    echo "Uploading ProGuard mapping for versionCode $NEW_BUILD..."
+    curl -fsS --max-time 600 -X POST \
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      -H 'Content-Type: application/octet-stream' \
+      --data-binary "@$MAPPING_FILE" \
+      "$PLAY_API/upload/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/apks/$NEW_BUILD/deobfuscationFiles/proguard?uploadType=media" >/dev/null ||
+      fail "Google Play rejected the ProGuard mapping upload."
+    echo "  OK   ProGuard mapping attached to versionCode $NEW_BUILD"
+  fi
+
+  # Add the build to the configured track without dropping its other releases.
+  current_releases=$(curl -fsS --max-time 60 \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/$GOOGLE_PLAY_TRACK" |
+    jq -c '.releases // []')
+  new_releases=$(printf '%s' "$current_releases" | jq -c --arg vc "$NEW_BUILD" --arg st "$GOOGLE_PLAY_RELEASE_STATUS" '
+    if any(.[]; .status == $st)
+    then map(if .status == $st then .versionCodes = ((.versionCodes // []) + [$vc] | unique) else . end)
+    else . + [{"status": $st, "versionCodes": [$vc]}]
+    end')
+  curl -fsS --max-time 60 -X PUT \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d "$(printf '{"track":"%s","releases":%s}' "$GOOGLE_PLAY_TRACK" "$new_releases")" \
+    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/$GOOGLE_PLAY_TRACK" >/dev/null ||
+    fail "Could not add versionCode $NEW_BUILD to the $GOOGLE_PLAY_TRACK track."
+
+  curl -fsS --max-time 300 -X POST \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID:commit" >/dev/null ||
+    fail "Could not commit the Google Play edit."
+  EDIT_ID=""
+  echo "Uploaded build $NEW_BUILD to Google Play track '$GOOGLE_PLAY_TRACK' ($GOOGLE_PLAY_RELEASE_STATUS)."
+}
+
 echo "==> Step 5: upload"
 if [ -f "$GOOGLE_PLAY_JSON_KEY" ]; then
-  command -v fastlane >/dev/null 2>&1 ||
-    fail "fastlane is required when GOOGLE_PLAY_JSON_KEY is configured."
-
-  fastlane supply \
-    --aab "$AAB" \
-    --mapping "$NATIVE_SYMBOLS_ZIP" \
-    --package_name "$PACKAGE_NAME" \
-    --json_key "$GOOGLE_PLAY_JSON_KEY" \
-    --track "$GOOGLE_PLAY_TRACK" \
-    --release_status "$GOOGLE_PLAY_RELEASE_STATUS" \
-    --skip_upload_metadata true \
-    --skip_upload_changelogs true \
-    --skip_upload_images true \
-    --skip_upload_screenshots true \
-    --timeout 600
-  echo "Uploaded build $NEW_BUILD to Google Play track '$GOOGLE_PLAY_TRACK' ($GOOGLE_PLAY_RELEASE_STATUS)."
+  upload_to_google_play
 else
   echo "No Google Play service-account key found at $GOOGLE_PLAY_JSON_KEY."
   echo "Build and verification completed without upload. Upload this bundle manually:"
