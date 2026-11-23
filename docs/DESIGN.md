@@ -145,7 +145,7 @@ Views use semantic descriptions, heading levels, dynamic text sizing, and theme 
 
 [`masjid-api.php`](../backend/wp-content/plugins/masjid-api/masjid-api.php) registers the five public read-only v1 WordPress REST routes documented by the production plugin: configuration, SalahAPI, events, announcements, and post descriptions. Its list handlers return seed arrays that mirror the mock contracts; post descriptions use matching seed content and fall back to published WordPress posts.
 
-The SalahAPI response advertises `/wp-json/masjid/v1/prayer-times-csv`, but that route is not registered. The app therefore falls back to calculated values against the included backend.
+The SalahAPI response advertises `dailyPrayerTimes.csvUrl` from the Muslim Prayer Times plugin (`/wp-json/muslim-prayer-times/v1/prayer-times-csv`). The route is registered but returns `404 no_data` until prayer times are imported through the plugin's wp-admin settings (Export/Import), so a freshly started local backend still serves calculated values. When the CSV feed is configured but cannot cover the requested window, [`PrayerTimesProvider`](../src/MasjidApp.Core/PrayerTimes/PrayerTimesProvider.cs) deliberately reports the prayer result as degraded (FR-PT-04), which surfaces as the "Showing cached data - offline" banner even though every other endpoint is reachable.
 
 ## Security and failure behavior
 
@@ -162,7 +162,7 @@ The CI workflow in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) res
 
 The following are verified limitations rather than stale checklist state:
 
-- The WordPress CSV route is absent, so the bundled backend always falls back to calculated values.
+- The WordPress CSV route serves no data until prayer times are imported via the Muslim Prayer Times plugin's wp-admin settings, so the bundled backend falls back to calculated values (surfaced as the degraded/offline banner).
 - QR camera scanning uses ZXing.Net.MAUI from both first-run setup and Add Masjid, with manual URL entry retained as fallback.
 - Prayer reminder sound and per-prayer athan/iqama choices are not exposed. Remote announcement push has one global opt-in; finer category-level push controls are not exposed.
 - Language selection and full resource-backed localization are not implemented.

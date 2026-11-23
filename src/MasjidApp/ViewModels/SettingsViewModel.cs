@@ -20,7 +20,6 @@ namespace MasjidApp.ViewModels;
 public sealed partial class SettingsViewModel : ViewModelBase
 {
     private const string ThemeKey = "settings_theme";
-    private const string TimeFormatKey = "settings_24h";
     private static readonly int[] PrayerReminderLeadTimes = [0, 5, 10, 15, 20, 30, 45, 60];
 
     private readonly IUserPreferences _preferences;
@@ -172,7 +171,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
         // Load persisted preferences - fall back to current themeService state for theme.
         _selectedTheme = (ThemePreference)_preferences.GetValue(ThemeKey, (int)_themeService.Current);
-        _is24HourTime = _preferences.GetValue(TimeFormatKey, false);
+        _is24HourTime = _preferences.GetValue(TimeFormatService.PreferenceKey, false);
         _prayerRemindersEnabled = _prayerReminderSettings.IsEnabled;
         _pushNotificationsEnabled = _pushNotificationSettings.State != PushNotificationState.Disabled;
         _pushNotificationState = _pushNotificationSettings.State;
@@ -229,7 +228,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     // Called by the MVVM toolkit when Is24HourTime is toggled.
     partial void OnIs24HourTimeChanged(bool value) =>
-        _preferences.SetValue(TimeFormatKey, value);
+        _preferences.SetValue(TimeFormatService.PreferenceKey, value);
 
     // Called by the MVVM toolkit when TelemetryConsentEnabled is toggled.
     partial void OnTelemetryConsentEnabledChanged(bool value) =>

@@ -26,8 +26,8 @@ public partial class NotificationsPage : ContentPage
             return;
         }
 
-        var notification = e.Parameter as Notifications.NotificationInboxItem ??
-            (sender as TapGestureRecognizer)?.BindingContext as Notifications.NotificationInboxItem;
+        var notification = e.Parameter as ViewModels.NotificationRow ??
+            (sender as TapGestureRecognizer)?.BindingContext as ViewModels.NotificationRow;
         if (notification is null)
         {
             return;
@@ -48,7 +48,7 @@ public partial class NotificationsPage : ContentPage
 
     private void OnDeleteInvoked(object? sender, EventArgs e)
     {
-        if (sender is SwipeItemView { CommandParameter: Notifications.NotificationInboxItem notification })
+        if (sender is SwipeItemView { CommandParameter: ViewModels.NotificationRow notification })
         {
             _viewModel.Delete(notification);
         }

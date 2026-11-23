@@ -55,14 +55,14 @@ The `masjid-api` plugin ([backend/wp-content/plugins/masjid-api/masjid-api.php](
 
 **Differences from the mock API (`mock/`):**
 - `/config` - `endpoints.*` URLs point at `:8000/wp-json/masjid/v1/…` instead of `:8090/…` so all traffic goes through WordPress when using `:8000` as the base URL.
-- `/salahapi` - `dailyPrayerTimes.csvUrl` points at `/wp-json/masjid/v1/prayer-times-csv` (not yet implemented; app falls back to calculation-only mode until the CSV route is added).
+- `/salahapi` - `dailyPrayerTimes.csvUrl` points at the Muslim Prayer Times plugin's CSV route (`/wp-json/muslim-prayer-times/v1/prayer-times-csv`) instead of the mock's static `prayer-times.csv`. That plugin's data table is empty until prayer times are imported in wp-admin (Muslim Prayer Times → settings → Export/Import); until then the route answers `404 no_data`, the app falls back to calculated times, and the Home/Prayer Times screens show the offline banner because the published schedule cannot be confirmed (FR-PT-04).
 - Push tokens are stored in the WordPress options table under `masjid_push_tokens` (production deployments should replace this with a dedicated store or third-party push service).
 
 To activate the plugin after `docker compose up -d`, navigate to http://localhost:8000/wp-admin → Plugins → Activate **Masjid API** (or use `wp-cli`: `wp plugin activate masjid-api`).
 
 ## 2. Configure environments
 
-Base URLs for `local` / `staging` / `prod` are environment-configurable without code changes (`DV-03`). For local dev, point the app's base URL at the mock API (`http://localhost:8090`) or your WordPress instance (`http://localhost:8000`). Android emulators reach the hostscripts/deploy-ios-device.sh via `http://10.0.2.2:<port>` instead of `localhost`.
+Base URLs for `local` / `staging` / `prod` are environment-configurable without code changes (`DV-03`). For local dev, point the app's base URL at the mock API (`http://localhost:8090`) or your WordPress instance (`http://localhost:8000`). Android emulators reach the host via `http://10.0.2.2:<port>` instead of `localhost`.
 
 > Never commit real secrets. Local dev credentials are hardcoded in [devbox/docker-compose.yml](../devbox/docker-compose.yml) for convenience; runtime secrets use platform secure storage (`NFR-SC-01`).
 

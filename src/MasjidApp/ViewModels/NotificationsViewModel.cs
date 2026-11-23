@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using MasjidApp.Core.Push;
 using MasjidApp.Core.Services;
 using MasjidApp.Notifications;
+using MasjidApp.Services;
 using Microsoft.Extensions.Logging;
 
 namespace MasjidApp.ViewModels;
@@ -14,24 +15,27 @@ public sealed partial class NotificationsViewModel : ViewModelBase
     private readonly IDeliveredNotificationService _deliveredNotifications;
     private readonly IMasjidContext _context;
     private readonly HomeShellViewModel _home;
+    private readonly ITimeFormatService _timeFormat;
     private readonly ILogger<NotificationsViewModel> _logger;
 
     [ObservableProperty]
     private bool _hasNotifications;
 
-    public ObservableCollection<NotificationInboxItem> Notifications { get; } = [];
+    public ObservableCollection<NotificationRow> Notifications { get; } = [];
 
     public NotificationsViewModel(
         INotificationInboxService inbox,
         IDeliveredNotificationService deliveredNotifications,
         IMasjidContext context,
         HomeShellViewModel home,
+        ITimeFormatService timeFormat,
         ILogger<NotificationsViewModel> logger)
     {
         _inbox = inbox;
         _deliveredNotifications = deliveredNotifications;
         _context = context;
         _home = home;
+        _timeFormat = timeFormat;
         _logger = logger;
         Title = "Notifications";
     }
@@ -54,8 +58,9 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         Reload(masjidId);
     }
 
-    public async Task OpenAsync(NotificationInboxItem notification)
+    public async Task OpenAsync(NotificationRow row)
     {
+        var notification = row.Item;
         LogNotificationTapStarted(_logger, notification.NotificationId, notification.DeepLink);
         var masjidId = CurrentMasjidId;
         if (masjidId is not null && !notification.IsRead)
@@ -81,8 +86,9 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         LogNotificationNavigationCompleted(_logger, notification.NotificationId, navigated);
     }
 
-    public void MarkRead(NotificationInboxItem notification)
+    public void MarkRead(NotificationRow row)
     {
+        var notification = row.Item;
         var masjidId = CurrentMasjidId;
         if (masjidId is null || notification.IsRead)
         {
@@ -93,7 +99,7 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         Reload(masjidId);
     }
 
-    public void Delete(NotificationInboxItem notification)
+    public void Delete(NotificationRow row)
     {
         var masjidId = CurrentMasjidId;
         if (masjidId is null)
@@ -101,7 +107,7 @@ public sealed partial class NotificationsViewModel : ViewModelBase
             return;
         }
 
-        _inbox.Delete(masjidId, notification.NotificationId);
+        _inbox.Delete(masjidId, row.Item.NotificationId);
         Reload(masjidId);
     }
 
@@ -126,7 +132,9 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         Notifications.Clear();
         foreach (var notification in _inbox.GetNotifications(masjidId))
         {
-            Notifications.Add(notification);
+            Notifications.Add(new NotificationRow(
+                notification,
+                _timeFormat.FormatNotificationTimestamp(notification.ReceivedAt)));
         }
 
         HasNotifications = Notifications.Count > 0;
@@ -140,4 +148,19 @@ public sealed partial class NotificationsViewModel : ViewModelBase
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Notification inbox navigation completed. NotificationId={NotificationId}, Navigated={Navigated}")]
     private static partial void LogNotificationNavigationCompleted(ILogger logger, string notificationId, bool navigated);
+}
+
+/// <summary>
+/// Presentation row for the notification inbox, carrying the persisted item plus
+/// its setting-aware formatted received-at timestamp (FR-ST-03).
+/// </summary>
+public sealed record NotificationRow(NotificationInboxItem Item, string TimestampText)
+{
+    public string Title => Item.Title;
+
+    public string Body => Item.Body;
+
+    public string? Type => Item.Type;
+
+    public bool IsRead => Item.IsRead;
 }

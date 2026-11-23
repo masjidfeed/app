@@ -88,10 +88,10 @@
                         VerticalOptions="Center"
                         AutomationProperties.IsInAccessibleTree="False" />
                     <Label
-                        Text="{Binding DisplayEventDateTime, StringFormat='{0:dddd, MMMM d, yyyy · h:mm tt}'}"
+                        Text="{Binding DisplayEventDateTimeText}"
                         Style="{StaticResource TextBody}"
                         VerticalOptions="Center"
-                        SemanticProperties.Description="{Binding DisplayEventDateTime, StringFormat='Date and time: {0:dddd, MMMM d, yyyy at h:mm tt}'}" />
+                        SemanticProperties.Description="{Binding DisplayEventDateTimeDescription}" />
                 </HorizontalStackLayout>
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

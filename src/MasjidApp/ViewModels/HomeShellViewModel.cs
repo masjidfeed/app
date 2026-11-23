@@ -48,8 +48,6 @@ public sealed record HomeShellCategoryPage(HomeShellCategory Category, HomeShell
 /// </summary>
 public sealed partial class HomeShellViewModel : ViewModelBase
 {
-    private const string TimeFormatKey = "settings_24h";
-
     private readonly IPrayerTimesProvider _prayerTimesProvider;
     private readonly IAnnouncementsService _announcementsService;
     private readonly IEventsService _eventsService;
@@ -58,7 +56,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     private readonly INavigationService _navigation;
     private readonly MasjidApp.Widgets.WidgetRefreshService _widgetRefresh;
     private readonly IPrayerReminderSettingsService _prayerReminderSettings;
-    private readonly IUserPreferences _preferences;
+    private readonly ITimeFormatService _timeFormat;
     private readonly INotificationInboxService _notificationInbox;
     private readonly IDeliveredNotificationService _deliveredNotifications;
     private readonly ILogger<HomeShellViewModel> _logger;
@@ -182,7 +180,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     /// <summary>Upcoming event occurrences shown in the Events category.</summary>
     [ObservableProperty]
-    private ObservableCollection<MasjidEventOccurrence> _upcomingEvents = [];
+    private ObservableCollection<HomeEventRow> _upcomingEvents = [];
 
     // ─── "Prayer Times" category (FR-PT-01) ─────────────────────────────────────
 
@@ -212,7 +210,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         INavigationService navigation,
         MasjidApp.Widgets.WidgetRefreshService widgetRefresh,
         IPrayerReminderSettingsService prayerReminderSettings,
-        IUserPreferences preferences,
+        ITimeFormatService timeFormat,
         INotificationInboxService notificationInbox,
         IDeliveredNotificationService deliveredNotifications,
         AboutViewModel about,
@@ -227,7 +225,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(navigation);
         ArgumentNullException.ThrowIfNull(widgetRefresh);
         ArgumentNullException.ThrowIfNull(prayerReminderSettings);
-        ArgumentNullException.ThrowIfNull(preferences);
+        ArgumentNullException.ThrowIfNull(timeFormat);
         ArgumentNullException.ThrowIfNull(notificationInbox);
         ArgumentNullException.ThrowIfNull(deliveredNotifications);
         ArgumentNullException.ThrowIfNull(about);
@@ -242,7 +240,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         _navigation = navigation;
         _widgetRefresh = widgetRefresh;
         _prayerReminderSettings = prayerReminderSettings;
-        _preferences = preferences;
+        _timeFormat = timeFormat;
         _notificationInbox = notificationInbox;
         _deliveredNotifications = deliveredNotifications;
         _logger = logger;
@@ -521,23 +519,31 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         }
 
         var result = await _eventsService.GetEventsAsync(eventsUrl, cachePolicy, ct);
-        var occurrences = FeedRefreshPolicy.ShouldReplaceItems(result)
+        var rows = FeedRefreshPolicy.ShouldReplaceItems(result)
             ? GetUpcoming(result.ValueOrDefault!)
             : null;
 
-        if (occurrences is not null)
+        if (rows is not null)
         {
-            ReplaceIfChanged(UpcomingEvents, occurrences);
+            ReplaceIfChanged(UpcomingEvents, rows);
         }
 
         return ContentState.FromApiResult(result);
     }
 
-    private IReadOnlyList<MasjidEventOccurrence> GetUpcoming(List<MasjidPost> events)
+    private List<HomeEventRow> GetUpcoming(List<MasjidPost> events)
     {
         var from = DateTimeOffset.Now;
-        return _eventsService.GetUpcoming(events, from, from.AddDays(30));
+        return _eventsService
+            .GetUpcoming(events, from, from.AddDays(30))
+            .Select(ToEventRow)
+            .ToList();
     }
+
+    private HomeEventRow ToEventRow(MasjidEventOccurrence occurrence) => new(
+        occurrence,
+        _timeFormat.FormatTimeOfDay(occurrence.OccurrenceDateTime),
+        $"At {_timeFormat.FormatTimeOfDay(occurrence.OccurrenceDateTime)}");
 
     /// <summary>
     /// Overwrites <paramref name="target"/> with <paramref name="items"/> only when the
@@ -670,16 +676,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     /// <summary>Navigates to the event detail page for the selected occurrence.</summary>
     [RelayCommand]
-    private Task SelectOccurrenceAsync(MasjidEventOccurrence occ)
-    {
-        return _navigation.GoToAsync(
-            Routes.PostDetailFromHome,
-            new Dictionary<string, object>
-            {
-                { nameof(PostDetailViewModel.Post), occ.Event },
-                { nameof(PostDetailViewModel.Occurrence), occ },
-            });
-    }
+    private Task SelectOccurrenceAsync(HomeEventRow row) =>
+        NavigateToOccurrenceAsync(row.Occurrence, Routes.PostDetailFromHome);
 
     /// <summary>
     /// Opens a post targeted by a notification. The deep-link type selects the matching
@@ -804,10 +802,10 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         }
 
         var renderedOccurrence = UpcomingEvents.FirstOrDefault(
-            item => item.Event.PostId == deepLink.PostId);
+            row => row.Occurrence.Event.PostId == deepLink.PostId);
         if (renderedOccurrence is not null)
         {
-            return (renderedOccurrence.Event, renderedOccurrence);
+            return (renderedOccurrence.Occurrence.Event, renderedOccurrence.Occurrence);
         }
 
         var cachedEvents = await _eventsService.GetEventsAsync(
@@ -890,7 +888,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     private void RebuildHomePrayerRows(DailyPrayerSchedule schedule)
     {
-        var use24HourTime = _preferences.GetValue(TimeFormatKey, false);
+        var use24HourTime = _timeFormat.Use24HourTime;
         HomePrayerRows =
         [
             HomePrayerTimeRow.Create("Fajr", schedule.FajrAthan, schedule.FajrIqama, use24HourTime),
@@ -925,6 +923,24 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Post deep link navigation succeeded. PostId={PostId}")]
     private static partial void LogDeepLinkNavigationSucceeded(ILogger logger, int postId);
+}
+
+/// <summary>
+/// Presentation row for an upcoming event on the Home Events feed, carrying the
+/// occurrence plus its setting-aware formatted time texts (FR-ST-03).
+/// </summary>
+public sealed record HomeEventRow(
+    MasjidEventOccurrence Occurrence,
+    string TimeText,
+    string TimeDescriptionText)
+{
+    public MasjidPost Event => Occurrence.Event;
+
+    public DateTimeOffset OccurrenceDateTime => Occurrence.OccurrenceDateTime;
+
+    public string? ActiveAlert => Occurrence.ActiveAlert;
+
+    public bool HasActiveAlert => Occurrence.HasActiveAlert;
 }
 
 /// <summary>Compact iqama-first prayer time shown in the Home prayer card.</summary>

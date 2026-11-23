@@ -171,6 +171,7 @@ public static class MauiProgram
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IUserPreferences, UserPreferences>();
+        services.AddSingleton<ITimeFormatService, TimeFormatService>();
         services.AddSingleton<IDeepLinkRouter, DeepLinkRouter>();
         services.AddSingleton<IPostActionService, PostActionService>();
 

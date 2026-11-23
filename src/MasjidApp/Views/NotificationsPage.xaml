@@ -5,7 +5,6 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:converters="clr-namespace:MasjidApp.Converters"
-    xmlns:notifications="clr-namespace:MasjidApp.Notifications"
     xmlns:vm="clr-namespace:MasjidApp.ViewModels"
     x:DataType="vm:NotificationsViewModel"
     Title="Notifications"
@@ -22,7 +21,7 @@
             SelectionMode="None"
             EmptyView="No notifications yet">
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="notifications:NotificationInboxItem">
+                <DataTemplate x:DataType="vm:NotificationRow">
                     <SwipeView
                         BackgroundColor="White"
                         SwipeStarted="OnNotificationSwipeStarted"
@@ -30,7 +29,7 @@
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Reveal">
                                 <SwipeItemView
-                                    CommandParameter="{Binding .}"
+                                    CommandParameter="{Binding Item}"
                                     Invoked="OnDeleteInvoked">
                                     <Grid
                                         WidthRequest="72"
@@ -66,7 +65,7 @@
                                 BackgroundColor="White">
                                 <Grid.GestureRecognizers>
                                     <TapGestureRecognizer
-                                        CommandParameter="{Binding .}"
+                                        CommandParameter="{Binding Item}"
                                         Tapped="OnNotificationTapped" />
                                 </Grid.GestureRecognizers>
                                 <Border
@@ -108,7 +107,7 @@
                                         LineBreakMode="TailTruncation"
                                         TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
                                     <Label
-                                        Text="{Binding ReceivedAt, StringFormat='{0:g}'}"
+                                        Text="{Binding TimestampText}"
                                         Style="{StaticResource TextSmall}"
                                         TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                                 </VerticalStackLayout>

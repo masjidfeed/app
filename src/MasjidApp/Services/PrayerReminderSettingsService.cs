@@ -14,16 +14,13 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
     private const string EnabledKey = "settings_prayer_reminders";
     private const string MinutesBeforeKey = "settings_prayer_reminder_minutes";
     private const string FingerprintKey = "settings_prayer_reminder_fingerprint";
-
-    // Shared with SettingsViewModel/PrayerTimesViewModel; the notification body embeds a
-    // formatted time, so the reminder window has to follow the same 12/24-hour preference.
-    private const string TimeFormatKey = "settings_24h";
     private const int DefaultMinutesBefore = 10;
 
     private readonly IUserPreferences _preferences;
     private readonly IPrayerTimesProvider _prayerTimesProvider;
     private readonly IPrayerReminderScheduler _scheduler;
     private readonly IMasjidContext _masjidContext;
+    private readonly ITimeFormatService _timeFormat;
     private readonly ILogger<PrayerReminderSettingsService> _logger;
     private readonly SemaphoreSlim _updateLock = new(1, 1);
 
@@ -33,18 +30,21 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         IPrayerTimesProvider prayerTimesProvider,
         IPrayerReminderScheduler scheduler,
         IMasjidContext masjidContext,
+        ITimeFormatService timeFormat,
         ILogger<PrayerReminderSettingsService> logger)
     {
         ArgumentNullException.ThrowIfNull(preferences);
         ArgumentNullException.ThrowIfNull(prayerTimesProvider);
         ArgumentNullException.ThrowIfNull(scheduler);
         ArgumentNullException.ThrowIfNull(masjidContext);
+        ArgumentNullException.ThrowIfNull(timeFormat);
         ArgumentNullException.ThrowIfNull(logger);
 
         _preferences = preferences;
         _prayerTimesProvider = prayerTimesProvider;
         _scheduler = scheduler;
         _masjidContext = masjidContext;
+        _timeFormat = timeFormat;
         _logger = logger;
     }
 
@@ -244,7 +244,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         return PrayerReminderUpdateResult.PermissionDenied;
     }
 
-    private bool Use24HourTime => _preferences.GetValue(TimeFormatKey, false);
+    private bool Use24HourTime => _timeFormat.Use24HourTime;
 
     private string ComputeFingerprint(
         IReadOnlyList<DailyPrayerSchedule> schedules,

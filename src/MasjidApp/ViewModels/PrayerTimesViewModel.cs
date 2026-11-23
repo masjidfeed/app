@@ -22,11 +22,8 @@ public sealed partial class PrayerTimesViewModel : ViewModelBase
 {
     private const int ScheduleWindowDays = 30;
 
-    // Shared key with SettingsViewModel so the same preference is read by both.
-    private const string TimeFormatKey = "settings_24h";
-
     private readonly IPrayerTimesProvider _provider;
-    private readonly IUserPreferences _preferences;
+    private readonly ITimeFormatService _timeFormat;
     private readonly IMasjidContext _context;
     private IDispatcherTimer? _countdownTimer;
     private bool _hasLoadedOnce;
@@ -89,14 +86,14 @@ public sealed partial class PrayerTimesViewModel : ViewModelBase
     /// </summary>
     public PrayerTimesViewModel(
         IPrayerTimesProvider provider,
-        IUserPreferences preferences,
+        ITimeFormatService timeFormat,
         IMasjidContext context)
     {
         ArgumentNullException.ThrowIfNull(provider);
-        ArgumentNullException.ThrowIfNull(preferences);
+        ArgumentNullException.ThrowIfNull(timeFormat);
         ArgumentNullException.ThrowIfNull(context);
         _provider = provider;
-        _preferences = preferences;
+        _timeFormat = timeFormat;
         _context = context;
         Title = "Prayer Times";
     }
@@ -127,7 +124,7 @@ public sealed partial class PrayerTimesViewModel : ViewModelBase
         try
         {
             var previousTimeFormat = Is24HourTime;
-            Is24HourTime = _preferences.GetValue(TimeFormatKey, false);
+            Is24HourTime = _timeFormat.Use24HourTime;
 
             var configResult = await _context.GetConfigAsync(cachePolicy, ct);
             var config = configResult?.ValueOrDefault;

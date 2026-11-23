@@ -39,4 +39,37 @@ public sealed class PrayerTimeFormatterTests
 
         result.Should().Be("-");
     }
+
+    [Fact]
+    public void Format_DateTimeOffset_ReturnsTwelveHourClockTimeAsStored()
+    {
+        var value = new DateTimeOffset(2025, 6, 21, 17, 5, 0, TimeSpan.FromHours(-5));
+
+        var result = PrayerTimeFormatter.Format(value, use24HourTime: false);
+
+        result.Should().Be(new TimeOnly(17, 5).ToString("h:mm tt", CultureInfo.CurrentCulture));
+    }
+
+    [Fact]
+    public void Format_DateTimeOffset_ReturnsTwentyFourHourClockTimeAsStored()
+    {
+        var value = new DateTimeOffset(2025, 6, 21, 17, 5, 0, TimeSpan.FromHours(-5));
+
+        var result = PrayerTimeFormatter.Format(value, use24HourTime: true);
+
+        result.Should().Be(new TimeOnly(17, 5).ToString("HH:mm", CultureInfo.CurrentCulture));
+    }
+
+    [Fact]
+    public void Format_DateTimeOffset_ExplicitCulture_OverridesCurrentCulture()
+    {
+        var value = new DateTimeOffset(2025, 6, 21, 17, 5, 0, TimeSpan.Zero);
+
+        var result = PrayerTimeFormatter.Format(
+            value,
+            use24HourTime: false,
+            culture: CultureInfo.InvariantCulture);
+
+        result.Should().Be(new TimeOnly(17, 5).ToString("h:mm tt", CultureInfo.InvariantCulture));
+    }
 }

@@ -2,6 +2,7 @@ using MasjidApp.Core.Models;
 using MasjidApp.Core.PrayerTimes;
 using MasjidApp.Core.Services;
 using MasjidApp.Core.Widgets;
+using MasjidApp.Services;
 using SalahAPI.Calculations;
 
 namespace MasjidApp.Widgets;
@@ -19,24 +20,23 @@ public sealed class WidgetRefreshService
 {
     /// <summary>Number of days of prayer data carried in each widget snapshot (FR-WG-01).</summary>
     private const int WindowDays = 7;
-    private const string TimeFormatKey = "settings_24h";
 
     private readonly IPrayerTimesProvider _provider;
     private readonly IWidgetDataWriter _writer;
     private readonly IMasjidContext _context;
-    private readonly MasjidApp.Services.IUserPreferences _preferences;
+    private readonly ITimeFormatService _timeFormat;
 
     /// <summary>Initialises a new instance of <see cref="WidgetRefreshService"/>.</summary>
     public WidgetRefreshService(
         IPrayerTimesProvider provider,
         IWidgetDataWriter writer,
         IMasjidContext context,
-        MasjidApp.Services.IUserPreferences preferences)
+        ITimeFormatService timeFormat)
     {
         _provider = provider;
         _writer = writer;
         _context = context;
-        _preferences = preferences;
+        _timeFormat = timeFormat;
     }
 
     /// <summary>
@@ -62,17 +62,15 @@ public sealed class WidgetRefreshService
         var configResult = await _context.GetConfigAsync(ct: ct).ConfigureAwait(false);
         var config = configResult?.ValueOrDefault;
 
-        var use24HourTime = _preferences.GetValue(TimeFormatKey, false);
-        var widgetData = BuildWidgetData(schedules, config, use24HourTime);
+        var widgetData = BuildWidgetData(schedules, config);
         await _writer.WriteAsync(widgetData, ct).ConfigureAwait(false);
     }
 
     // ── Builder ────────────────────────────────────────────────────────────────
 
-    private static WidgetData BuildWidgetData(
+    private WidgetData BuildWidgetData(
         IReadOnlyList<DailyPrayerSchedule> schedules,
-        MasjidConfig? config,
-        bool use24HourTime)
+        MasjidConfig? config)
     {
         var first = schedules[0];
         var tz = ResolveTimeZone(first.Timezone);
@@ -90,7 +88,7 @@ public sealed class WidgetRefreshService
                 DateEpochSeconds = ToEpoch(tz, schedule.Date, TimeOnly.MinValue),
                 HijriDate = hijriStr,
                 GregorianDate = gregorianStr,
-                Prayers = BuildPrayerEntries(schedule, tz, use24HourTime),
+                Prayers = BuildPrayerEntries(schedule, tz),
             });
         }
 
@@ -122,16 +120,22 @@ public sealed class WidgetRefreshService
         return new DateTimeOffset(utc, TimeSpan.Zero).ToUnixTimeSeconds();
     }
 
-    private static List<WidgetPrayerEntry> BuildPrayerEntries(
+    private List<WidgetPrayerEntry> BuildPrayerEntries(
         DailyPrayerSchedule schedule,
-        TimeZoneInfo tz,
-        bool use24HourTime)
+        TimeZoneInfo tz)
     {
+        // FR-ST-03: widget prayer times follow the app's 12/24-hour preference.
+        // The invariant culture is preserved (as before) so the platform widgets
+        // keep their English "AM/PM"-strip contract; absent iqamas render as
+        // empty strings so platform layouts can hide them.
         return PrayerCandidates(schedule)
             .Select(p => new WidgetPrayerEntry(
                 p.Name,
-                FormatTime(p.Athan, use24HourTime),
-                FormatTime(p.Iqama, use24HourTime),
+                _timeFormat.Format(p.Athan, culture: System.Globalization.CultureInfo.InvariantCulture),
+                _timeFormat.Format(
+                    p.Iqama,
+                    emptyText: string.Empty,
+                    culture: System.Globalization.CultureInfo.InvariantCulture),
                 ToEpoch(tz, schedule.Date, p.Athan),
                 p.Iqama.HasValue ? ToEpoch(tz, schedule.Date, p.Iqama.Value) : 0))
             .ToList();
@@ -147,14 +151,6 @@ public sealed class WidgetRefreshService
         yield return ("Maghrib", schedule.MaghribAthan, schedule.MaghribIqama);
         yield return ("Isha", schedule.IshaAthan, schedule.IshaIqama);
     }
-
-    private static string FormatTime(TimeOnly time, bool use24HourTime) =>
-        time.ToString(
-            use24HourTime ? "HH:mm" : "h:mm tt",
-            System.Globalization.CultureInfo.InvariantCulture);
-
-    private static string FormatTime(TimeOnly? time, bool use24HourTime) =>
-        time.HasValue ? FormatTime(time.Value, use24HourTime) : string.Empty;
 
     private static string MonthName(int month) => month switch
     {

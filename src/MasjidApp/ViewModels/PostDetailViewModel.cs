@@ -14,11 +14,14 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
     private readonly INavigationService _navigation;
     private readonly IEventCalendarService _calendarService;
     private readonly IPostActionService _postActions;
+    private readonly ITimeFormatService _timeFormat;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEvent))]
     [NotifyPropertyChangedFor(nameof(IsAnnouncement))]
     [NotifyPropertyChangedFor(nameof(DisplayEventDateTime))]
+    [NotifyPropertyChangedFor(nameof(DisplayEventDateTimeText))]
+    [NotifyPropertyChangedFor(nameof(DisplayEventDateTimeDescription))]
     [NotifyPropertyChangedFor(nameof(HasEventDateTime))]
     [NotifyPropertyChangedFor(nameof(ActiveAlert))]
     [NotifyPropertyChangedFor(nameof(HasActiveAlert))]
@@ -26,6 +29,8 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayEventDateTime))]
+    [NotifyPropertyChangedFor(nameof(DisplayEventDateTimeText))]
+    [NotifyPropertyChangedFor(nameof(DisplayEventDateTimeDescription))]
     [NotifyPropertyChangedFor(nameof(HasEventDateTime))]
     [NotifyPropertyChangedFor(nameof(ActiveAlert))]
     [NotifyPropertyChangedFor(nameof(HasActiveAlert))]
@@ -40,6 +45,17 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
     /// <summary>The selected concrete occurrence, falling back to the post's event start.</summary>
     public DateTimeOffset? DisplayEventDateTime => Occurrence?.OccurrenceDateTime ?? Post?.EventDateTime;
 
+    /// <summary>
+    /// Full date and time line for the selected occurrence, formatted per the
+    /// user's 12/24-hour preference (FR-ST-03); <c>null</c> when there is none.
+    /// </summary>
+    public string? DisplayEventDateTimeText =>
+        DisplayEventDateTime is { } value ? _timeFormat.FormatEventDateTime(value) : null;
+
+    /// <summary>Accessibility variant of <see cref="DisplayEventDateTimeText"/>.</summary>
+    public string? DisplayEventDateTimeDescription =>
+        DisplayEventDateTime is { } value ? _timeFormat.FormatEventDateTimeDescription(value) : null;
+
     /// <summary>Whether date and calendar actions have a concrete event occurrence.</summary>
     public bool HasEventDateTime => IsEvent && DisplayEventDateTime is not null;
 
@@ -53,11 +69,13 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
     public PostDetailViewModel(
         INavigationService navigation,
         IEventCalendarService calendarService,
-        IPostActionService postActions)
+        IPostActionService postActions,
+        ITimeFormatService timeFormat)
     {
         _navigation = navigation;
         _calendarService = calendarService;
         _postActions = postActions;
+        _timeFormat = timeFormat;
         Title = "Post";
     }
 

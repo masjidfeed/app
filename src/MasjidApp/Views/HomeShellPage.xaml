@@ -8,7 +8,6 @@
     xmlns:vm="clr-namespace:MasjidApp.ViewModels"
     xmlns:controls="clr-namespace:MasjidApp.Controls"
     xmlns:models="clr-namespace:MasjidApp.Core.Models;assembly=MasjidApp.Core"
-    xmlns:events="clr-namespace:MasjidApp.Core.Events;assembly=MasjidApp.Core"
     xmlns:l="clr-namespace:MasjidApp.Localization"
     x:DataType="vm:HomeShellViewModel"
     Shell.NavBarIsVisible="False"
@@ -230,7 +229,7 @@
                                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="events:MasjidEventOccurrence">
+                            <DataTemplate x:DataType="vm:HomeEventRow">
                                 <Border
                                     Margin="12,4"
                                     Padding="14,12"
@@ -241,7 +240,7 @@
                                         <TapGestureRecognizer
                                             x:DataType="{x:Null}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectOccurrenceCommand}"
-                                            CommandParameter="{Binding .}" />
+                                            CommandParameter="{Binding Occurrence}" />
                                     </Border.GestureRecognizers>
                                     <Grid ColumnDefinitions="64,*" ColumnSpacing="12">
                                         <Border
@@ -321,11 +320,11 @@
                                                     VerticalOptions="Center"
                                                     AutomationProperties.IsInAccessibleTree="False" />
                                                 <Label
-                                                    Text="{Binding OccurrenceDateTime, StringFormat='{0:h:mm tt}'}"
+                                                    Text="{Binding TimeText}"
                                                     Style="{StaticResource TextCaption}"
                                                     VerticalOptions="Center"
                                                     TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
-                                                    SemanticProperties.Description="{Binding OccurrenceDateTime, StringFormat='At {0:h:mm tt}'}" />
+                                                    SemanticProperties.Description="{Binding TimeDescriptionText}" />
                                             </HorizontalStackLayout>
                                             <HorizontalStackLayout
                                                 Spacing="6"
@@ -830,12 +829,16 @@
             BackgroundColor="Transparent"
             SemanticProperties.Description="{Binding MasjidName, StringFormat='Masjid: {0}'}">
 
-            <!-- Name + logo side-by-side, left-aligned -->
-            <HorizontalStackLayout
+            <!-- Name + logo side-by-side, left-aligned. The Grid constrains the name
+                 to the width left over after the bell/settings buttons so long
+                 masjid names wrap instead of overflowing beneath the buttons. -->
+            <Grid
                 Grid.Column="0"
-                Spacing="8"
+                ColumnDefinitions="Auto,*"
+                ColumnSpacing="8"
                 VerticalOptions="Center">
                 <Image
+                    Grid.Column="0"
                     Source="{Binding LogoUrl}"
                     HeightRequest="32"
                     WidthRequest="40"
@@ -844,12 +847,15 @@
                     IsVisible="{Binding LogoUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
                     SemanticProperties.Description="{Binding MasjidName, StringFormat='{0} logo'}" />
                 <Label
+                    Grid.Column="1"
                     Text="{Binding MasjidName}"
                     Style="{StaticResource TextSubtitle}"
+                    LineBreakMode="WordWrap"
                     VerticalOptions="Center"
+                    VerticalTextAlignment="Center"
                     SemanticProperties.HeadingLevel="Level1"
-                    SemanticProperties.Description="{Binding MasjidName}" />                
-            </HorizontalStackLayout>
+                    SemanticProperties.Description="{Binding MasjidName}" />
+            </Grid>
 
             <!-- Notification inbox button with unread indicator. -->
             <Border
