@@ -147,6 +147,45 @@ public sealed class EventsServiceTests
         result[0].HasActiveAlert.Should().BeFalse();
     }
 
+    [Fact]
+    public void GetUpcoming_RecurringAlertOnlyShowsOnInstancesBeforeAlertEnd()
+    {
+        // Weekly Fridays: Jun 12, Jun 19, Jun 26, Jul 3. Alert ends Jun 20,
+        // so Jun 12 and Jun 19 carry the alert; Jun 26 and Jul 3 must not.
+        var ev = ClassEvent with
+        {
+            Alert = "Room change this session.",
+            AlertEndDateTime = BaseTime.AddDays(8),
+        };
+
+        var result = _sut.GetUpcoming([ev], BaseTime, BaseTime.AddDays(21));
+
+        result.Should().NotBeEmpty();
+        result.Where(o => o.OccurrenceDateTime <= ev.AlertEndDateTime)
+            .Should().AllSatisfy(o => o.ActiveAlert.Should().Be("Room change this session."));
+        result.Where(o => o.OccurrenceDateTime > ev.AlertEndDateTime)
+            .Should().AllSatisfy(o => o.ActiveAlert.Should().BeNull());
+    }
+
+    [Fact]
+    public void GetUpcoming_RecurringAlertAtInstanceMatchingAlertEnd_RemainsActive()
+    {
+        // Inclusive end: an instance exactly at alertEndDateTime keeps the alert.
+        var alertEnd = BaseTime.AddDays(7); // Jun 19 occurrence
+        var ev = ClassEvent with
+        {
+            Alert = "Canceled after this week.",
+            AlertEndDateTime = alertEnd,
+        };
+
+        var result = _sut.GetUpcoming([ev], BaseTime, BaseTime.AddDays(21));
+
+        var jun19 = result.Single(o => o.OccurrenceDateTime == alertEnd);
+        jun19.ActiveAlert.Should().Be("Canceled after this week.");
+        var jun26 = result.Single(o => o.OccurrenceDateTime == alertEnd.AddDays(7));
+        jun26.ActiveAlert.Should().BeNull();
+    }
+
     // ── FilterByCategory ────────────────────────────────────────────────────────
 
     [Fact]

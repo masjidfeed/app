@@ -117,20 +117,21 @@ public sealed class EventsService : IEventsService
                 continue;
             }
 
-            var activeAlert = GetActiveAlert(ev, from);
             if (!string.IsNullOrWhiteSpace(ev.RecurrenceRule))
             {
                 // Expand RRULE over the requested window.
                 var hits = RRuleExpander.Expand(ev.RecurrenceRule, eventDateTime, from, until);
                 foreach (var odt in hits)
                 {
-                    result.Add(new MasjidEventOccurrence(ev, odt, activeAlert));
+                    // Alerts are evaluated per instance: a recurring occurrence
+                    // only carries the alert while it precedes alertEndDateTime.
+                    result.Add(new MasjidEventOccurrence(ev, odt, GetActiveAlert(ev, odt)));
                 }
             }
             else if (eventDateTime >= from && eventDateTime <= until)
             {
                 // One-time event within window.
-                result.Add(new MasjidEventOccurrence(ev, eventDateTime, activeAlert));
+                result.Add(new MasjidEventOccurrence(ev, eventDateTime, GetActiveAlert(ev, from)));
             }
         }
 
