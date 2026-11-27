@@ -676,8 +676,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     /// <summary>Navigates to the event detail page for the selected occurrence.</summary>
     [RelayCommand]
-    private Task SelectOccurrenceAsync(HomeEventRow row) =>
-        NavigateToOccurrenceAsync(row.Occurrence, Routes.PostDetailFromHome);
+    private Task SelectOccurrenceAsync(MasjidEventOccurrence occurrence) =>
+        NavigateToOccurrenceAsync(occurrence, Routes.PostDetailFromHome);
 
     /// <summary>
     /// Opens a post targeted by a notification. The deep-link type selects the matching
@@ -824,11 +824,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
             return null;
         }
 
-        var activeAlert = !string.IsNullOrWhiteSpace(post.Alert) &&
-            post.AlertEndDateTime >= DateTimeOffset.UtcNow
-                ? post.Alert
-                : null;
-        return new MasjidEventOccurrence(post, eventDateTime, activeAlert);
+        return new MasjidEventOccurrence(post, eventDateTime, post.GetActiveAlert(DateTimeOffset.UtcNow));
     }
 
     private static bool MatchesDeepLink(

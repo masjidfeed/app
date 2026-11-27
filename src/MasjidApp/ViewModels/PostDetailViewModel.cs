@@ -60,7 +60,7 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
     public bool HasEventDateTime => IsEvent && DisplayEventDateTime is not null;
 
     /// <summary>The event update active for the selected occurrence.</summary>
-    public string? ActiveAlert => Occurrence?.ActiveAlert ?? GetActiveAlert(Post);
+    public string? ActiveAlert => Occurrence?.ActiveAlert ?? Post?.GetActiveAlert(DateTimeOffset.UtcNow);
 
     /// <summary>Whether an active event update should be displayed.</summary>
     public bool HasActiveAlert => !string.IsNullOrWhiteSpace(ActiveAlert);
@@ -135,13 +135,6 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
 
     private static MasjidEventOccurrence? CreateOccurrence(MasjidPost? post) =>
         post is { IsEvent: true, EventDateTime: { } eventDateTime }
-            ? new MasjidEventOccurrence(post, eventDateTime, GetActiveAlert(post))
-            : null;
-
-    private static string? GetActiveAlert(MasjidPost? post) =>
-        post is not null &&
-        !string.IsNullOrWhiteSpace(post.Alert) &&
-        post.AlertEndDateTime >= DateTimeOffset.UtcNow
-            ? post.Alert
+            ? new MasjidEventOccurrence(post, eventDateTime, post.GetActiveAlert(DateTimeOffset.UtcNow))
             : null;
 }

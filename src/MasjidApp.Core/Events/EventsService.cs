@@ -123,28 +123,18 @@ public sealed class EventsService : IEventsService
                 var hits = RRuleExpander.Expand(ev.RecurrenceRule, eventDateTime, from, until);
                 foreach (var odt in hits)
                 {
-                    // Alerts are evaluated per instance: a recurring occurrence
-                    // only carries the alert while it precedes alertEndDateTime.
-                    result.Add(new MasjidEventOccurrence(ev, odt, GetActiveAlert(ev, odt)));
+                    // An alert with an end date is evaluated at each recurring occurrence.
+                    result.Add(new MasjidEventOccurrence(ev, odt, ev.GetActiveAlert(odt)));
                 }
             }
             else if (eventDateTime >= from && eventDateTime <= until)
             {
                 // One-time event within window.
-                result.Add(new MasjidEventOccurrence(ev, eventDateTime, GetActiveAlert(ev, from)));
+                result.Add(new MasjidEventOccurrence(ev, eventDateTime, ev.GetActiveAlert(from)));
             }
         }
 
         return result.OrderBy(o => o.OccurrenceDateTime).ToList();
-    }
-
-    private static string? GetActiveAlert(MasjidPost ev, DateTimeOffset at)
-    {
-        return !string.IsNullOrWhiteSpace(ev.Alert) &&
-            ev.AlertEndDateTime is { } end &&
-            at <= end
-                ? ev.Alert
-                : null;
     }
 
     /// <inheritdoc/>

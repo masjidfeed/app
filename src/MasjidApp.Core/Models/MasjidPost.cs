@@ -68,7 +68,13 @@ public sealed record MasjidPost
     [JsonPropertyName("alert")]
     public string? Alert { get; init; }
 
-    /// <summary>Instant through which <see cref="Alert"/> remains visible.</summary>
+    /// <summary>Optional instant through which <see cref="Alert"/> remains visible.</summary>
     [JsonPropertyName("alertEndDateTime")]
     public DateTimeOffset? AlertEndDateTime { get; init; }
+
+    /// <summary>Returns the alert at the given instant. An alert without an end remains active.</summary>
+    public string? GetActiveAlert(DateTimeOffset at) =>
+        !string.IsNullOrWhiteSpace(Alert) && (AlertEndDateTime is not { } end || at <= end)
+            ? Alert
+            : null;
 }

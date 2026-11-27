@@ -126,18 +126,15 @@ public sealed class EventsServiceTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, true)]
-    public void GetUpcoming_IncompleteOrExpiredAlert_DoesNotExposeAlert(
-        bool hasEndDate,
-        bool isExpired)
+    [InlineData(null, false)]
+    [InlineData(" ", false)]
+    [InlineData("Dinner moved to the main hall.", true)]
+    public void GetUpcoming_BlankOrExpiredAlert_DoesNotExposeAlert(string? alert, bool isExpired)
     {
         var ev = FundraiserEvent with
         {
-            Alert = "Dinner moved to the main hall.",
-            AlertEndDateTime = hasEndDate
-                ? BaseTime.AddMinutes(isExpired ? -1 : 1)
-                : null,
+            Alert = alert,
+            AlertEndDateTime = isExpired ? BaseTime.AddMinutes(-1) : null,
         };
 
         var result = _sut.GetUpcoming([ev], BaseTime, BaseTime.AddDays(30));
@@ -145,6 +142,25 @@ public sealed class EventsServiceTests
         result.Should().ContainSingle();
         result[0].ActiveAlert.Should().BeNull();
         result[0].HasActiveAlert.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 4)]
+    public void GetUpcoming_AlertWithNoEndDate_AppearsOnEveryOccurrence(bool recurring, int expectedCount)
+    {
+        var ev = (recurring ? ClassEvent : FundraiserEvent) with
+        {
+            Alert = "The event is canceled",
+        };
+
+        var result = _sut.GetUpcoming([ev], BaseTime, BaseTime.AddDays(21));
+
+        result.Should().HaveCount(expectedCount).And.AllSatisfy(occurrence =>
+        {
+            occurrence.ActiveAlert.Should().Be(ev.Alert);
+            occurrence.HasActiveAlert.Should().BeTrue();
+        });
     }
 
     [Fact]
