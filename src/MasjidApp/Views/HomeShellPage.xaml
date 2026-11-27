@@ -7,7 +7,6 @@
     xmlns:views="clr-namespace:MasjidApp.Views"
     xmlns:vm="clr-namespace:MasjidApp.ViewModels"
     xmlns:controls="clr-namespace:MasjidApp.Controls"
-    xmlns:models="clr-namespace:MasjidApp.Core.Models;assembly=MasjidApp.Core"
     xmlns:l="clr-namespace:MasjidApp.Localization"
     x:DataType="vm:HomeShellViewModel"
     Shell.NavBarIsVisible="False"
@@ -32,7 +31,7 @@
                         Command="{Binding Shell.RefreshCommand}"
                         IsRefreshing="{Binding Shell.IsRefreshing}">
                     <CollectionView
-                        ItemsSource="{Binding Shell.RecentAnnouncements}"
+                        ItemsSource="{Binding Shell.LatestAnnouncements}"
                         BackgroundColor="Transparent"
                         SemanticProperties.Description="Recent announcements">
                         <CollectionView.Header>
@@ -136,7 +135,7 @@
                                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="models:MasjidPost">
+                            <DataTemplate x:DataType="vm:HomeAnnouncementRow">
                                 <Border
                                     Margin="12,4"
                                     Padding="0"
@@ -146,36 +145,57 @@
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer
                                             x:DataType="{x:Null}"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectPostCommand}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectAnnouncementCommand}"
                                             CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
                                     <VerticalStackLayout Padding="16,14" Spacing="4">
+                                        <Border
+                                            Margin="0,0,0,4"
+                                            Padding="12,10"
+                                            Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}"
+                                            IsVisible="{Binding HasActiveAlert}">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label
+                                                    Text="{l:Localize Events_Alert_Label}"
+                                                    Style="{StaticResource TextMicroStrong}"
+                                                    TextTransform="Uppercase"
+                                                    TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+                                                <Label
+                                                    Text="{Binding ActiveAlert}"
+                                                    Style="{StaticResource TextCaptionStrong}"
+                                                    LineBreakMode="WordWrap"
+                                                    TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+                                            </VerticalStackLayout>
+                                        </Border>
                                         <Label
-                                            Text="{Binding Title}"
+                                            Text="{Binding Post.Title}"
                                             FontFamily="GildaDisplay"
                                             Style="{StaticResource TextCardTitle}"
                                             SemanticProperties.HeadingLevel="Level3"
-                                            SemanticProperties.Description="{Binding Title}" />
+                                            SemanticProperties.Description="{Binding Post.Title}" />
                                         <Label
-                                            Text="{Binding PublishedAt, StringFormat='{0:MMM d, yyyy}'}"
+                                            Text="{Binding DateText}"
                                             Style="{StaticResource TextCaption}"
                                             TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
-                                            SemanticProperties.Description="{Binding PublishedAt, StringFormat='Published {0:MMMM d, yyyy}'}" />
+                                            SemanticProperties.Description="{Binding DateDescription}" />
                                         <Image
-                                            Source="{Binding ImageUrl}"
+                                            Source="{Binding Post.ImageUrl}"
                                             Aspect="AspectFill"
                                             HeightRequest="200"
                                             Margin="0,0,0,4"
-                                            IsVisible="{Binding ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-                                            SemanticProperties.Description="{Binding Title, StringFormat='{0} image'}" />
+                                            IsVisible="{Binding Post.ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                            SemanticProperties.Description="{Binding Post.Title, StringFormat='{0} image'}" />
                                         <Label
-                                            Text="{Binding Description, Converter={StaticResource HtmlToPlainTextConverter}}"
+                                            Text="{Binding Post.Description, Converter={StaticResource HtmlToPlainTextConverter}}"
                                             Style="{StaticResource TextCaption}"
                                             LineBreakMode="TailTruncation"
                                             MaxLines="2"
-                                            IsVisible="{Binding Description, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                                            IsVisible="{Binding Post.Description, Converter={StaticResource IsNotNullOrEmptyConverter}}"
                                             TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
-                                            SemanticProperties.Description="{Binding Title}" />
+                                            SemanticProperties.Description="{Binding Post.Title}" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>

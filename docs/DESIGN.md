@@ -88,7 +88,11 @@ When a CSV feed is configured but the stored rows cannot cover the window on scr
 
 [`HomeShellPage.xaml`](../src/MasjidApp/Views/HomeShellPage.xaml) and [`PostDetailPage.xaml`](../src/MasjidApp/Views/PostDetailPage.xaml) display active event alerts in an accessible, high-contrast update panel. The unified detail page exposes the original post permalink through a safe system-browser action and the native platform share sheet, and conditionally renders event date, recurrence, location, alert, and calendar controls when `IsEvent` is true. Actions are hidden when a post has no permalink. Event navigation supplies a concrete [`MasjidEventOccurrence`](../src/MasjidApp.Core/Events/MasjidEventOccurrence.cs), so the calendar editor uses the selected expanded occurrence rather than only the series start. Users can configure an alert in that editor; the app does not currently expose a separate event-reminder action (`FR-EV-05`). The model has no duration, so calendar drafts use a one-hour duration.
 
-[`AnnouncementsService`](../src/MasjidApp.Core/Announcements/AnnouncementsService.cs) fetches cached announcements. Event and announcement HTML passes through the strict allow-list in [`HtmlSanitizer`](../src/MasjidApp.Core/Utils/HtmlSanitizer.cs) before rendering. Scripts, event-handler attributes, CSS, and non-HTTP(S) links are removed. Safe HTTP(S) links open in the system browser and encoded Unicode entities remain displayable.
+[`AnnouncementsService`](../src/MasjidApp.Core/Announcements/AnnouncementsService.cs) fetches cached announcements.
+
+Latest Announcements places events with active alerts from the Events tab's 30-day window above regular announcements. Each event appears once, at its next alerted occurrence, with a full-width amber alert panel before its title. If the same post is also in the announcements feed, the event card takes its place.
+
+Event and announcement HTML passes through the strict allow-list in [`HtmlSanitizer`](../src/MasjidApp.Core/Utils/HtmlSanitizer.cs) before rendering. Scripts, event-handler attributes, CSS, and non-HTTP(S) links are removed. Safe HTTP(S) links open in the system browser and encoded Unicode entities remain displayable.
 
 Both services normalize every fetched item before returning it: relative image paths are resolved against the masjid base URL, and titles are converted to plain text so WordPress-encoded punctuation (for example `&#8211;`) renders as real characters instead of raw entities. Event alerts are also converted to sanitized plain text before display.
 

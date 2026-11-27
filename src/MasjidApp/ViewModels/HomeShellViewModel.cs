@@ -172,9 +172,10 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
     // ─── "Today" feed (FR-CM-01) ────────────────────────────────────────────────
 
-    /// <summary>Newest announcements for the Today dashboard.</summary>
-    [ObservableProperty]
-    private ObservableCollection<MasjidPost> _recentAnnouncements = [];
+    private IReadOnlyList<MasjidPost> _recentAnnouncements = [];
+
+    /// <summary>Upcoming events with active alerts, followed by recent announcements.</summary>
+    public ObservableCollection<HomeAnnouncementRow> LatestAnnouncements { get; } = [];
 
     // ─── "Events" category (FR-EV-01) ───────────────────────────────────────────
 
@@ -473,6 +474,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         catch (Exception ex)
         {
             LogEventsLoadFailed(_logger, ex);
+            UpdateLatestAnnouncements();
             return new ContentState(true, null, false);
         }
 #pragma warning restore CA1031
@@ -488,7 +490,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(announcementsUrl))
         {
-            ReplaceIfChanged(RecentAnnouncements, []);
+            _recentAnnouncements = [];
+            UpdateLatestAnnouncements();
             return new ContentState(false, null, false);
         }
 
@@ -498,7 +501,8 @@ public sealed partial class HomeShellViewModel : ViewModelBase
 
         if (items is not null)
         {
-            ReplaceIfChanged(RecentAnnouncements, items);
+            _recentAnnouncements = items;
+            UpdateLatestAnnouncements();
         }
 
         return ContentState.FromApiResult(result);
@@ -515,6 +519,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(eventsUrl))
         {
             ReplaceIfChanged(UpcomingEvents, []);
+            UpdateLatestAnnouncements();
             return new ContentState(false, null, false);
         }
 
@@ -528,7 +533,33 @@ public sealed partial class HomeShellViewModel : ViewModelBase
             ReplaceIfChanged(UpcomingEvents, rows);
         }
 
+        UpdateLatestAnnouncements();
         return ContentState.FromApiResult(result);
+    }
+
+    private void UpdateLatestAnnouncements()
+    {
+        var now = DateTimeOffset.Now;
+        var alertedEvents = IsEventsEnabled
+            ? UpcomingEvents
+                .Where(row => row.HasActiveAlert && row.OccurrenceDateTime >= now &&
+                    row.Event.GetActiveAlert(now) is not null)
+                .DistinctBy(row => (row.Event.PostId, PostWithoutId: row.Event.PostId > 0 ? null : row.Event))
+                .ToList()
+            : [];
+
+        var alertedPostIds = alertedEvents
+            .Select(row => row.Event.PostId)
+            .Where(id => id > 0)
+            .ToHashSet();
+
+        var feed = alertedEvents.Select(row => new HomeAnnouncementRow(row.Event, row))
+            .Concat(_recentAnnouncements
+                .Where(post => !alertedPostIds.Contains(post.PostId))
+                .Select(post => new HomeAnnouncementRow(post)))
+            .ToList();
+
+        ReplaceIfChanged(LatestAnnouncements, feed);
     }
 
     private List<HomeEventRow> GetUpcoming(List<MasjidPost> events)
@@ -665,13 +696,18 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     [RelayCommand]
     private Task GoToNotificationsAsync() => _navigation.GoToAsync(Routes.Notifications);
 
-    /// <summary>Navigates to the unified detail page for the selected post.</summary>
+    /// <summary>Opens the selected announcement or its specific event occurrence.</summary>
     [RelayCommand]
-    private Task SelectPostAsync(MasjidPost post)
+    private Task SelectAnnouncementAsync(HomeAnnouncementRow row)
     {
+        if (row.Event is { } eventRow)
+        {
+            return SelectOccurrenceAsync(eventRow.Occurrence);
+        }
+
         return _navigation.GoToAsync(
             Routes.PostDetailFromHome,
-            new Dictionary<string, object> { { nameof(PostDetailViewModel.Post), post } });
+            new Dictionary<string, object> { { nameof(PostDetailViewModel.Post), row.Post } });
     }
 
     /// <summary>Navigates to the event detail page for the selected occurrence.</summary>
@@ -788,7 +824,7 @@ public sealed partial class HomeShellViewModel : ViewModelBase
     {
         if (deepLink.Type == PostDeepLinkType.Announcements)
         {
-            var rendered = RecentAnnouncements.FirstOrDefault(post => post.PostId == deepLink.PostId);
+            var rendered = _recentAnnouncements.FirstOrDefault(post => post.PostId == deepLink.PostId);
             if (rendered is not null)
             {
                 return (rendered, null);
@@ -937,6 +973,22 @@ public sealed record HomeEventRow(
     public string? ActiveAlert => Occurrence.ActiveAlert;
 
     public bool HasActiveAlert => Occurrence.HasActiveAlert;
+}
+
+/// <summary>Card for a recent announcement or an upcoming event with an alert.</summary>
+public sealed record HomeAnnouncementRow(MasjidPost Post, HomeEventRow? Event = null)
+{
+    public string? ActiveAlert => Event?.ActiveAlert;
+
+    public bool HasActiveAlert => Event?.HasActiveAlert == true;
+
+    public string DateText => Event is { } eventRow
+        ? $"{eventRow.OccurrenceDateTime:MMM d, yyyy} · {eventRow.TimeText}"
+        : $"{Post.PublishedAt:MMM d, yyyy}";
+
+    public string DateDescription => Event is { } eventRow
+        ? $"{eventRow.OccurrenceDateTime:MMMM d, yyyy}. {eventRow.TimeDescriptionText}"
+        : $"Published {Post.PublishedAt:MMMM d, yyyy}";
 }
 
 /// <summary>Compact iqama-first prayer time shown in the Home prayer card.</summary>
