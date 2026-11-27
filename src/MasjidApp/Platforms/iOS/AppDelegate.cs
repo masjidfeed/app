@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Foundation;
-using MasjidApp.Push;
 using MasjidApp.Widgets;
 using Microsoft.Extensions.DependencyInjection;
 using UIKit;
@@ -32,17 +31,4 @@ public class AppDelegate : MauiUIApplicationDelegate
 
         return result;
     }
-
-    public override bool OpenUrl(UIApplication application, NSUrl url, NSDictionary options)
-    {
-        if (Uri.TryCreate(url.AbsoluteString, UriKind.Absolute, out var uri) &&
-            IPlatformApplication.Current?.Services.GetService<IDeepLinkRouter>() is { } router)
-        {
-            _ = router.RouteAsync(uri);
-            return true;
-        }
-
-        return base.OpenUrl(application, url, options);
-    }
-
 }

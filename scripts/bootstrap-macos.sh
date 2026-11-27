@@ -83,13 +83,13 @@ brew_cask_installed() { brew list --cask "$1" >/dev/null 2>&1; }
 # ── 2. .NET SDK + MAUI workload ──────────────────────────────────────────────
 install_dotnet() {
   step ".NET SDK (pinned by global.json)"
-  local required_band
-  required_band="$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$REPO_ROOT/global.json" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+  local required_sdk active_sdk
+  required_sdk="$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$REPO_ROOT/global.json" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
 
-  if command -v dotnet >/dev/null 2>&1 && dotnet --list-sdks 2>/dev/null | grep -q "^${required_band%.*}\."; then
-    ok "A matching .NET SDK is already on PATH ($(dotnet --version))"
+  if active_sdk=$(cd "$REPO_ROOT" && dotnet --version 2>/dev/null); then
+    ok "A matching .NET SDK is already on PATH ($active_sdk)"
   else
-    warn "Installing .NET SDK ${required_band} to ${DOTNET_ROOT} via dotnet-install.sh…"
+    warn "Installing .NET SDK ${required_sdk} to ${DOTNET_ROOT} via dotnet-install.sh…"
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
     chmod +x /tmp/dotnet-install.sh
     /tmp/dotnet-install.sh --jsonfile "$REPO_ROOT/global.json" --install-dir "$DOTNET_ROOT"
@@ -100,14 +100,7 @@ install_dotnet() {
   fi
 
   step ".NET MAUI workload"
-  local dotnet_bin
-  dotnet_bin="$(command -v dotnet)"
-  if "$dotnet_bin" workload list 2>/dev/null | grep -qiE '^maui|maui-ios|maui-android'; then
-    ok "MAUI workload already installed"
-  else
-    warn "Installing the MAUI workload (this can take a few minutes)…"
-    "$dotnet_bin" workload install maui
-  fi
+  (cd "$REPO_ROOT" && dotnet workload restore src/MasjidApp/MasjidApp.csproj --skip-manifest-update)
 }
 
 # ── 3. Microsoft OpenJDK 21 ──────────────────────────────────────────────────

@@ -144,8 +144,7 @@
                                     Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer
-                                            x:DataType="{x:Null}"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectAnnouncementCommand}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HomeShellCategoryPage}}, Path=Shell.SelectAnnouncementCommand}"
                                             CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
                                     <VerticalStackLayout Padding="16,14" Spacing="4">
@@ -244,8 +243,7 @@
                                     Background="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}">
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer
-                                            x:DataType="{x:Null}"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.Shell.SelectOccurrenceCommand}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HomeShellCategoryPage}}, Path=Shell.SelectOccurrenceCommand}"
                                             CommandParameter="{Binding Occurrence}" />
                                     </Border.GestureRecognizers>
                                     <Grid ColumnDefinitions="64,*" ColumnSpacing="12">

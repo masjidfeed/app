@@ -33,7 +33,7 @@
 #                              and prints Xcode Organizer upload instructions.
 #   XCODE_APP                  Name of the /Applications/*.app bundle to build with, without
 #                              the .app suffix (useful when several Xcode versions are
-#                              installed side by side). Defaults to "Xcode_26.5".
+#                              installed side by side). Defaults to "Xcode".
 #   BUILD_NUMBER               New ApplicationVersion (build number). Defaults to the
 #                              current value + 1.
 #   APP_VERSION                New ApplicationDisplayVersion (marketing version, e.g.
@@ -48,14 +48,30 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-XCODE_APP="${XCODE_APP:-Xcode_26.5}"
-DEVELOPER_DIR="/Applications/${XCODE_APP}.app/Contents/Developer"
+XCODE_APP="${XCODE_APP:-Xcode}"
+export XcodeLocation="/Applications/${XCODE_APP}.app"
+DEVELOPER_DIR="$XcodeLocation/Contents/Developer"
 [ -d "$DEVELOPER_DIR" ] || {
   echo "No Xcode found at /Applications/${XCODE_APP}.app (set XCODE_APP to override)." >&2
   exit 1
 }
 export DEVELOPER_DIR
-echo "Using $(DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -version | head -1) at $DEVELOPER_DIR"
+IOS_SDK_VERSION=$(xcrun --sdk iphoneos --show-sdk-version)
+if [ "${IOS_SDK_VERSION%%.*}" -lt 27 ]; then
+  echo "iOS SDK 27 or later is required. $XcodeLocation provides iOS SDK $IOS_SDK_VERSION." >&2
+  exit 1
+fi
+echo "Using iOS SDK $IOS_SDK_VERSION from $XcodeLocation"
+
+if ! dotnet --version >/dev/null 2>&1; then
+  if [ -x "$HOME/.dotnet/dotnet" ] && "$HOME/.dotnet/dotnet" --version >/dev/null 2>&1; then
+    export DOTNET_ROOT="$HOME/.dotnet"
+    export PATH="$DOTNET_ROOT:$PATH"
+  else
+    echo "Install the .NET SDK specified in global.json before publishing." >&2
+    exit 1
+  fi
+fi
 
 APP_GROUP="group.com.goodsoftware.masjidapp"
 CSPROJ="src/MasjidApp/MasjidApp.csproj"

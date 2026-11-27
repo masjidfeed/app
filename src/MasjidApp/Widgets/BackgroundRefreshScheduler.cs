@@ -4,6 +4,7 @@
 
 #if IOS
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using BackgroundTasks;
 using Foundation;
 #elif ANDROID
@@ -55,11 +56,30 @@ public sealed class BackgroundRefreshScheduler : IBackgroundRefreshScheduler
             EarliestBeginDate = (NSDate)DateTime.UtcNow.Add(MinInterval),
         };
 
-        if (!BGTaskScheduler.Shared.Submit(request, out var error))
+        if (OperatingSystem.IsIOSVersionAtLeast(27) || OperatingSystem.IsMacCatalystVersionAtLeast(27))
         {
-            Debug.WriteLine($"[D1] Failed to schedule widget refresh: {error?.LocalizedDescription}");
+            SubmitOnBackgroundThread(request);
+        }
+        else if (!BGTaskScheduler.Shared.Submit(request, out var error))
+        {
+            LogSubmissionError(error);
         }
     }
+
+    // Apple's completion-handler API must be submitted off the main thread.
+    [SupportedOSPlatform("ios27.0")]
+    [SupportedOSPlatform("maccatalyst27.0")]
+    private static void SubmitOnBackgroundThread(BGTaskRequest request) =>
+        _ = Task.Run(() => BGTaskScheduler.Shared.Submit(request, static error =>
+        {
+            if (error is not null)
+            {
+                LogSubmissionError(error);
+            }
+        }));
+
+    private static void LogSubmissionError(NSError? error) =>
+        Debug.WriteLine($"[D1] Failed to schedule widget refresh: {error?.LocalizedDescription}");
 
     private void HandleTask(BGTask task)
     {

@@ -14,11 +14,7 @@ xcrun simctl bootstatus "$UDID" -b
 open -a Simulator
 echo "iOS Simulator ready."
 
-if [[ ! -f "$ROOT/src/MasjidApp/obj/project.assets.json" ]]; then
-	dotnet restore "$PROJECT"
-fi
-
-dotnet build "$PROJECT" -c Debug -f net10.0-ios --no-restore \
+dotnet build "$PROJECT" -c Debug -f net10.0-ios \
 	-p:RuntimeIdentifier=iossimulator-arm64 \
 	-p:EmbedWidgetExtension="$EMBED_WIDGET_EXTENSION"
 xcrun simctl terminate "$UDID" "$APP_ID" 2>/dev/null || true

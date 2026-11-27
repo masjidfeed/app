@@ -9,16 +9,22 @@ Setup and workflow for the Masjid App. Requirements referenced by ID (e.g. `DV-0
 > Microsoft OpenJDK 21, the Android SDK + an AVD, Docker Desktop, and the VS Code MAUI extension). The
 > script is idempotent - re-run it any time. Full Xcode must be installed from the App Store separately.
 
-- **.NET SDK** (latest stable LTS supported by MAUI, `TC-07`) with the MAUI workload:
+- **.NET SDK and MAUI workload set** pinned in [global.json](../global.json) (`TC-07`).
+  Install the pinned SDK, then run from the repository root:
   ```sh
-  dotnet workload install maui
+  dotnet workload restore src/MasjidApp/MasjidApp.csproj
   ```
 - **Microsoft OpenJDK 21** - required by the .NET MAUI Android toolchain:
   ```sh
   brew install --cask microsoft-openjdk@21
   ```
 - **Docker Desktop** (for the local backend, `DV-01`).
-- **Xcode** + iOS Simulator (macOS) and/or the **Android SDK** with an emulator (`DV-02`).
+- **Xcode 27.2** and the iOS simulator runtime for Apple builds, or the **Android SDK** with
+  an emulator for Android builds (`DV-02`). If `xcode-select -p` still points to an older
+  Xcode, select 27.2 after installing it at `/Applications/Xcode.app`:
+  ```sh
+  sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+  ```
 
 ## 1. Start the local backend
 

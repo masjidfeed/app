@@ -141,8 +141,9 @@ What each step does:
   as a proper `Payload/`-rooted `.ipa`, validates it, and uploads via `xcrun altool`.
   Otherwise prints the archive path and stops for a manual upload via Xcode Organizer.
 
-Other env vars: `XCODE_APP` selects which installed Xcode to build with when more than one
-is present (default `Xcode_26.5`). See the script's header comment for the full list.
+The script uses `/Applications/Xcode.app` by default. Install Xcode 27.2 to match the
+workload set in [global.json](../global.json). If you installed it under another name,
+set `XCODE_APP` to the bundle name without `.app`, for example `XCODE_APP=Xcode_27.2`.
 
 ### Optional - set up automated upload
 
@@ -213,22 +214,9 @@ so do not treat Actions artifacts in a public repository as private or attach th
 to a public GitHub Release: the archive contains the signed application, embedded
 provisioning profiles, native symbols, and managed symbols.
 
-It also picks `XCODE_APP` itself, since the local default does not exist on the runner.
-Two things make that fiddly, and both are worth knowing before touching the `Select Xcode`
-step:
-
-- .NET for iOS validates the Xcode major/minor version *exactly*, and the required version
-  is not the SDK pack's folder suffix - pack `Microsoft.iOS.Sdk.net10.0_26.5` has shipped
-  revisions wanting Xcode 26.6. The step reads `_RecommendedXcodeVersion` from the restored
-  pack, which is the value the check actually compares against. Which pack gets restored is
-  pinned by `workloadVersion` in [global.json](../global.json); bump it in lockstep with
-  your local `dotnet workload --info`, or CI and local build against different Xcodes.
-- The runner exposes each Xcode under several names (`Xcode.app`, `Xcode_26.5.app`,
-  `Xcode_26.5.0.app`) where all but one are symlinks. The step resolves the choice to the
-  real bundle and runs `xcode-select` against it, because tooling that drops
-  `DEVELOPER_DIR` falls back to the system-wide selection and would otherwise look for the
-  macOS SDK inside a different Xcode - which surfaces as the thoroughly misleading
-  `SDK ".../MacOSX.sdk" cannot be located` / `actool exited with code 72`.
+The `xcode-27` runner picks the Xcode major/minor version required by the pinned .NET iOS
+pack. It checks that the bundle can resolve `actool`, sets `XCODE_APP` for the publishing
+script, and runs `xcode-select` for tools that rely on the system-wide selection.
 
 ### Key Vault release credentials
 

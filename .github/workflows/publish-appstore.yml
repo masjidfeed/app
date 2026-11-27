@@ -41,8 +41,7 @@ env:
 jobs:
   publish:
     name: Archive & upload
-    # iOS 26 SDK is required to build this project, so the image must ship Xcode 26.
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
 
     steps:
@@ -70,19 +69,15 @@ jobs:
           dotnet workload restore src/MasjidApp/MasjidApp.csproj
           dotnet workload --info | head -2
 
-      # The script defaults to XCODE_APP=Xcode_26.5, which only exists on the maintainer's
-      # machine, so the runner has to pick its own. Two traps here:
-      #   - .NET for iOS validates Xcode major.minor EXACTLY (_ValidateXcodeVersion), and
-      #     the required version is NOT the pack's folder suffix: pack
-      #     Microsoft.iOS.Sdk.net10.0_26.5 has shipped revisions wanting Xcode 26.6. Read
-      #     _RecommendedXcodeVersion, which is the value the check compares against.
+      # The runner's default Xcode can differ from the pinned workload's required version.
+      #   - Read RecommendedXcodeVersion from the installed iOS pack because .NET for iOS
+      #     validates the Xcode major/minor version against that value.
       #   - actool is resolved by running xcodebuild against the literal MacOSX.sdk path
       #     under the chosen bundle, and a failure there surfaces as the unhelpful
       #     "SDK ... MacOSX.sdk cannot be located" / "actool exited with code 72".
       #     Neither `test -d` on that path nor the `macosx` SDK alias is equivalent, so
       #     the probe below runs the exact command .NET runs.
-      #   - The image exposes each Xcode under several names (Xcode.app, Xcode_26.5.app,
-      #     Xcode_26.5.0.app) where all but one are symlinks. Resolve to the real bundle
+      #   - The image exposes each Xcode under several names. Resolve to the real bundle
       #     and point xcode-select at it, because tools that drop DEVELOPER_DIR fall back
       #     to the system-wide selection and would otherwise look inside a different Xcode.
       - name: Select Xcode
@@ -97,9 +92,9 @@ jobs:
             echo "No Microsoft.iOS SDK pack under $dotnet_root - did the workload restore succeed?" >&2
             exit 1
           }
-          want=$(sed -n 's/.*<_RecommendedXcodeVersion>\([^<]*\)<.*/\1/p' "$props" | tail -1)
+          want=$(sed -n 's/.*<RecommendedXcodeVersion>\([^<]*\)<.*/\1/p' "$props" | tail -1)
           [ -n "$want" ] || {
-            echo "Could not read _RecommendedXcodeVersion from $props" >&2
+            echo "Could not read RecommendedXcodeVersion from $props" >&2
             exit 1
           }
           echo "$(basename "$(dirname "$(dirname "$props")")") requires Xcode $want"
