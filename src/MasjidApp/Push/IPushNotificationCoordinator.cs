@@ -11,6 +11,11 @@ public interface IPushNotificationCoordinator
     /// </summary>
     Task<bool> SyncAsync(bool enabled, bool forceReRegister = false, CancellationToken ct = default);
 
+#if IOS
+    /// <summary>Registers an ActivityKit token for the iqama update and dismissal.</summary>
+    Task<bool> RegisterIqamaActivityAsync(string activityToken, DateTimeOffset iqama, CancellationToken ct = default);
+#endif
+
     /// <summary>Stores and routes one tapped remote notification payload.</summary>
     Task HandleNotificationTapAsync(
         string? title,

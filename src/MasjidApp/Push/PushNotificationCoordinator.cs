@@ -307,6 +307,43 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
             IsRead: false));
     }
 
+#if IOS
+    public async Task<bool> RegisterIqamaActivityAsync(string activityToken, DateTimeOffset iqama, CancellationToken ct = default)
+    {
+        IFirebaseCloudMessaging messaging;
+        await _syncLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await EnsureFirebaseAsync().ConfigureAwait(false);
+                await _messaging!.CheckIfValidAsync().ConfigureAwait(false);
+            }).ConfigureAwait(false);
+            messaging = _messaging!;
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
+
+        var token = await messaging.GetTokenAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        var data = new IqamaActivityRegistration(activityToken, token, iqama.ToUnixTimeSeconds());
+        using var request = new HttpRequestMessage(HttpMethod.Post, MasjidFeedFirebase.GatewayBaseUrl.TrimEnd('/') + "/v1/iqama-activities")
+        {
+            Content = JsonContent.Create(data, IqamaActivityJsonContext.Default.IqamaActivityRegistration),
+        };
+        FirebaseAppCheckHeader.Add(request, await CrossFirebaseAppCheck.GetTokenAsync().ConfigureAwait(false));
+        using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
+#endif
+
 #if IOS || ANDROID
     private async Task EnsureFirebaseAsync()
     {
@@ -479,8 +516,13 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
         }
     }
 
-    private void OnTokenChanged(object? sender, FCMTokenChangedEventArgs e) =>
-        _ = SyncAsync(enabled: true);
+    private void OnTokenChanged(object? sender, FCMTokenChangedEventArgs e)
+    {
+        if (AnnouncementsEnabled)
+        {
+            _ = SyncAsync(enabled: true);
+        }
+    }
 
     private void OnNotificationReceived(object? sender, FCMNotificationReceivedEventArgs e)
     {
@@ -538,10 +580,11 @@ public sealed partial class PushNotificationCoordinator : IPushNotificationCoord
 #endif
 
     private void OnActiveMasjidChanged(object? sender, EventArgs e) =>
-        _ = SyncAsync(
-            _preferences.GetValue(
-                PushNotificationSettingsService.StateKey,
-                (int)PushNotificationState.Disabled) != (int)PushNotificationState.Disabled);
+        _ = SyncAsync(AnnouncementsEnabled);
+
+    private bool AnnouncementsEnabled => _preferences.GetValue(
+        PushNotificationSettingsService.StateKey,
+        (int)PushNotificationState.Disabled) != (int)PushNotificationState.Disabled;
 
     public void Dispose()
     {

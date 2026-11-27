@@ -504,9 +504,9 @@ Google Cloud, then invite it into Play Console:
   The key downloads once and cannot be re-downloaded.
 5. Open [Play Console ▸ Users and permissions](https://play.google.com/console/users-and-permissions),
   select **Invite new users**, and enter the service account's `client_email`. Under **App
-  permissions** add MasjidApp and grant **Release apps to testing tracks**. Grant **Release
-  to production** only if this workflow will be allowed to publish to production. Select
-  **Invite user**.
+  permissions**, add MasjidApp and grant **Release to production, exclude devices, and use
+  Play App Signing** for the default production workflow. Grant **Release apps to testing
+  tracks** if the service account also publishes test builds. Select **Invite user**.
 
 Install and validate the downloaded key:
 

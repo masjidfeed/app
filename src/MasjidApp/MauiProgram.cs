@@ -254,6 +254,7 @@ public static class MauiProgram
         // ── Batch C1: Local Prayer & Iqama Reminders (FR-PT-10, FR-PN-07) ─────────
         // INotificationService is registered as a singleton by UseLocalNotification().
         services.AddSingleton<IPrayerReminderScheduler, PrayerReminderScheduler>();
+        services.AddSingleton<IqamaLiveActivityScheduler>();
         services.AddSingleton<IPrayerReminderSettingsService, PrayerReminderSettingsService>();
         services.AddSingleton<INotificationInboxService, NotificationInboxService>();
         services.AddSingleton<IDeliveredNotificationService, DeliveredNotificationService>();

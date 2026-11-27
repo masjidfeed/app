@@ -1,6 +1,7 @@
 using MasjidApp.Core.Notifications;
 using MasjidApp.Core.PrayerTimes;
 using MasjidApp.Core.Services;
+using MasjidApp.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace MasjidApp.Services;
@@ -19,6 +20,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
     private readonly IUserPreferences _preferences;
     private readonly IPrayerTimesProvider _prayerTimesProvider;
     private readonly IPrayerReminderScheduler _scheduler;
+    private readonly IqamaLiveActivityScheduler _iqamaActivities;
     private readonly IMasjidContext _masjidContext;
     private readonly ITimeFormatService _timeFormat;
     private readonly ILogger<PrayerReminderSettingsService> _logger;
@@ -29,6 +31,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         IUserPreferences preferences,
         IPrayerTimesProvider prayerTimesProvider,
         IPrayerReminderScheduler scheduler,
+        IqamaLiveActivityScheduler iqamaActivities,
         IMasjidContext masjidContext,
         ITimeFormatService timeFormat,
         ILogger<PrayerReminderSettingsService> logger)
@@ -36,6 +39,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         ArgumentNullException.ThrowIfNull(preferences);
         ArgumentNullException.ThrowIfNull(prayerTimesProvider);
         ArgumentNullException.ThrowIfNull(scheduler);
+        ArgumentNullException.ThrowIfNull(iqamaActivities);
         ArgumentNullException.ThrowIfNull(masjidContext);
         ArgumentNullException.ThrowIfNull(timeFormat);
         ArgumentNullException.ThrowIfNull(logger);
@@ -43,9 +47,11 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         _preferences = preferences;
         _prayerTimesProvider = prayerTimesProvider;
         _scheduler = scheduler;
+        _iqamaActivities = iqamaActivities;
         _masjidContext = masjidContext;
         _timeFormat = timeFormat;
         _logger = logger;
+        _masjidContext.ActiveMasjidChanged += OnActiveMasjidChanged;
     }
 
     /// <inheritdoc />
@@ -90,11 +96,17 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         await _updateLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (!enabled)
+            {
+                _iqamaActivities.Cancel();
+            }
+
             if (!await IsFeatureEnabledAsync(ct).ConfigureAwait(false))
             {
                 // Feature disabled by the masjid config (API-06): never schedule and
                 // cancel anything pending, without touching the user's stored choice.
                 InvalidateFingerprint();
+                _iqamaActivities.Cancel();
                 await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
                 return PrayerReminderUpdateResult.Disabled;
             }
@@ -120,6 +132,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
                 ct: ct).ConfigureAwait(false);
             if (schedules.Count == 0)
             {
+                _iqamaActivities.Cancel();
                 return PrayerReminderUpdateResult.ScheduleUnavailable;
             }
 
@@ -170,6 +183,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
                 // Feature disabled by the masjid config (API-06): keep the user's
                 // stored choice but make sure nothing stays scheduled.
                 InvalidateFingerprint();
+                _iqamaActivities.Cancel();
                 await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
                 return PrayerReminderUpdateResult.Disabled;
             }
@@ -177,6 +191,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
             if (!IsEnabled)
             {
                 InvalidateFingerprint();
+                _iqamaActivities.Cancel();
                 await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
                 return PrayerReminderUpdateResult.Disabled;
             }
@@ -184,6 +199,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
             if (schedules.Count == 0)
             {
                 InvalidateFingerprint();
+                _iqamaActivities.Cancel();
                 await _scheduler.CancelAllAsync(ct).ConfigureAwait(false);
                 return PrayerReminderUpdateResult.ScheduleUnavailable;
             }
@@ -197,6 +213,7 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
             {
                 // Nothing that affects the pending window changed, so the already-scheduled
                 // notifications stay untouched (FR-PN-07).
+                _iqamaActivities.Sync(schedules, _masjidContext.ActiveEntry?.Id, minutesBefore);
                 return PrayerReminderUpdateResult.Unchanged;
             }
 
@@ -211,7 +228,13 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
     }
 
     /// <inheritdoc />
-    public void Dispose() => _updateLock.Dispose();
+    public void Dispose()
+    {
+        _masjidContext.ActiveMasjidChanged -= OnActiveMasjidChanged;
+        _updateLock.Dispose();
+    }
+
+    private void OnActiveMasjidChanged(object? sender, EventArgs e) => _iqamaActivities.Cancel();
 
     /// <summary>
     /// Whether the active masjid's config enables the prayer-reminder feature (API-06).
@@ -236,10 +259,12 @@ public sealed partial class PrayerReminderSettingsService : IPrayerReminderSetti
         if (permissionGranted)
         {
             _preferences.SetValue(FingerprintKey, fingerprint);
+            _iqamaActivities.Sync(schedules, _masjidContext.ActiveEntry?.Id, minutesBefore);
             return PrayerReminderUpdateResult.Scheduled;
         }
 
         _preferences.SetValue(EnabledKey, false);
+        _iqamaActivities.Cancel();
         InvalidateFingerprint();
         return PrayerReminderUpdateResult.PermissionDenied;
     }

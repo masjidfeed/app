@@ -8,11 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		AA0000000000000000000012 /* MasjidWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* MasjidWidget.swift */; };
+		AA0000000000000000000020 /* IqamaActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000022 /* IqamaActivityAttributes.swift */; };
+		AA0000000000000000000021 /* IqamaLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000023 /* IqamaLiveActivity.swift */; };
 		AA0000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000014 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AA000000000000000000000E /* MasjidWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasjidWidget.swift; sourceTree = "<group>"; };
+		AA0000000000000000000022 /* IqamaActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IqamaActivityAttributes.swift; sourceTree = "<group>"; };
+		AA0000000000000000000023 /* IqamaLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IqamaLiveActivity.swift; sourceTree = "<group>"; };
 		AA000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000000000000000000010 /* MasjidWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MasjidWidgetExtension.entitlements; sourceTree = "<group>"; };
 		AA0000000000000000000011 /* MasjidWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MasjidWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -34,6 +38,8 @@
 			isa = PBXGroup;
 			children = (
 				AA000000000000000000000E /* MasjidWidget.swift */,
+				AA0000000000000000000022 /* IqamaActivityAttributes.swift */,
+				AA0000000000000000000023 /* IqamaLiveActivity.swift */,
 				AA0000000000000000000014 /* Assets.xcassets */,
 				AA000000000000000000000F /* Info.plist */,
 				AA0000000000000000000010 /* MasjidWidgetExtension.entitlements */,
@@ -119,6 +125,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000000000000000000012 /* MasjidWidget.swift in Sources */,
+				AA0000000000000000000020 /* IqamaActivityAttributes.swift in Sources */,
+				AA0000000000000000000021 /* IqamaLiveActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

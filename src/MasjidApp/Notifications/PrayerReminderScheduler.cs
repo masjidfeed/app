@@ -169,7 +169,7 @@ internal sealed class PrayerReminderScheduler : IPrayerReminderScheduler
     /// Converts a prayer's date + time (expressed in the masjid timezone) to a
     /// <see cref="DateTimeOffset"/> suitable for <c>NotificationRequestSchedule.NotifyTime</c>.
     /// </summary>
-    private static DateTimeOffset ToDateTimeOffset(DateOnly date, TimeOnly time, TimeZoneInfo tz)
+    internal static DateTimeOffset ToDateTimeOffset(DateOnly date, TimeOnly time, TimeZoneInfo tz)
     {
         var dt = new DateTime(
             date.Year, date.Month, date.Day,
@@ -185,7 +185,7 @@ internal sealed class PrayerReminderScheduler : IPrayerReminderScheduler
     /// Resolves an IANA timezone ID to a <see cref="TimeZoneInfo"/>.
     /// Falls back to <see cref="TimeZoneInfo.Local"/> if the ID is absent or unknown.
     /// </summary>
-    private static TimeZoneInfo ResolveTimeZone(string? ianaId)
+    internal static TimeZoneInfo ResolveTimeZone(string? ianaId)
     {
         if (string.IsNullOrWhiteSpace(ianaId))
         {

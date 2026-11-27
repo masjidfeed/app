@@ -274,6 +274,9 @@
   <data name="Settings_PrayerReminder_Status_Failed" xml:space="preserve">
     <value>Could not update reminders. Please try again.</value>
   </data>
+  <data name="Notification_IqamaLiveActivity_Body" xml:space="preserve">
+    <value>Your iqama countdown has started.</value>
+  </data>
   <data name="Notification_PrayerReminder_Title" xml:space="preserve">
     <value>Get ready for {0}</value>
     <comment>{0} prayer name, e.g. "Fajr".</comment>

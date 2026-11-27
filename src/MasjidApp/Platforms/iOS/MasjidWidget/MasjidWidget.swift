@@ -1173,5 +1173,8 @@ struct MasjidWidgetBundle: WidgetBundle {
         if #available(iOSApplicationExtension 16.1, *) {
             MasjidLockScreenGaugeWidget()
         }
+        if #available(iOSApplicationExtension 26.0, *) {
+            IqamaLiveActivity()
+        }
     }
 }

@@ -30,7 +30,7 @@
 
 		<!-- Versions: marketing version lives in app-version.txt so bumping it is one edit. -->
 		<ApplicationDisplayVersion Condition="'$(ApplicationDisplayVersion)' == ''">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)app-version.txt').Trim())</ApplicationDisplayVersion>
-		<ApplicationVersion>45</ApplicationVersion>
+		<ApplicationVersion>46</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
@@ -51,6 +51,7 @@
 		     Override with -p:MasjidFeedFirebase*...=... if the central project
 		     ever changes. -->
 		<MasjidFeedFirebaseIosAppId Condition="'$(MasjidFeedFirebaseIosAppId)' == ''">1:275056678751:ios:349c8a8a5a5d6bf67a08ea</MasjidFeedFirebaseIosAppId>
+		<MasjidFeedGatewayBaseUrl Condition="'$(MasjidFeedGatewayBaseUrl)' == ''">https://masjidfeed-app.gsf8.org</MasjidFeedGatewayBaseUrl>
 		<MasjidFeedFirebaseIosSenderId Condition="'$(MasjidFeedFirebaseIosSenderId)' == ''">275056678751</MasjidFeedFirebaseIosSenderId>
 		<MasjidFeedFirebaseIosProjectId Condition="'$(MasjidFeedFirebaseIosProjectId)' == ''">masjidapp-bcfc7</MasjidFeedFirebaseIosProjectId>
 		<MasjidFeedFirebaseIosApiKey Condition="'$(MasjidFeedFirebaseIosApiKey)' == ''">AIzaSyCO5ZKatwvR32K3-fJgI95trtMda38z-zw</MasjidFeedFirebaseIosApiKey>
@@ -90,6 +91,7 @@
 			<_MasjidFeedFirebaseLine Include="    public const string SenderId = &quot;$(MasjidFeedFirebaseSenderId)&quot;%3B" />
 			<_MasjidFeedFirebaseLine Include="    public const string ProjectId = &quot;$(MasjidFeedFirebaseProjectId)&quot;%3B" />
 			<_MasjidFeedFirebaseLine Include="    public const string ApiKey = &quot;$(MasjidFeedFirebaseApiKey)&quot;%3B" />
+			<_MasjidFeedFirebaseLine Include="    public const string GatewayBaseUrl = &quot;$(MasjidFeedGatewayBaseUrl)&quot;%3B" />
 			<_MasjidFeedFirebaseLine Include="}" />
 		</ItemGroup>
 		<WriteLinesToFile
@@ -238,19 +240,26 @@
 			<Kind>Static</Kind>
 			<ForceLoad>true</ForceLoad>
 			<Frameworks>WidgetKit</Frameworks>
+			<WeakFrameworks>ActivityKit</WeakFrameworks>
 			<LinkWithSwiftSystemLibraries>true</LinkWithSwiftSystemLibraries>
 		</NativeReference>
 	</ItemGroup>
 
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<_MasjidWidgetBridgeSource Include="$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/WidgetTimelineReloader.swift" />
+		<_MasjidWidgetBridgeSource Include="$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/IqamaActivityAttributes.swift" />
+		<_MasjidWidgetBridgeSource Include="$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/IqamaActivityBridge.swift" />
+	</ItemGroup>
+
 	<Target Name="_BuildMasjidWidgetReloadBridge"
 	        BeforeTargets="_ExpandNativeReferences"
-	        Inputs="$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/WidgetTimelineReloader.swift"
+	        Inputs="@(_MasjidWidgetBridgeSource)"
 	        Outputs="$(_MasjidWidgetReloadBridgeLib)"
 	        Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
 		<MakeDir Directories="$(_MasjidWidgetReloadBridgeDir)" />
 		<Message Importance="high"
 		         Text="Building iOS WidgetKit reload bridge ($(_MasjidWidgetReloadBridgeTarget))..." />
-		<Exec Command="xcrun --sdk $(_MasjidWidgetReloadBridgeSdk) swiftc -target $(_MasjidWidgetReloadBridgeTarget) -emit-library -static -parse-as-library -o &quot;$(_MasjidWidgetReloadBridgeLib)&quot; &quot;$(MSBuildProjectDirectory)/Platforms/iOS/MasjidWidget/WidgetTimelineReloader.swift&quot;" />
+		<Exec Command="xcrun --sdk $(_MasjidWidgetReloadBridgeSdk) swiftc -target $(_MasjidWidgetReloadBridgeTarget) -emit-library -static -parse-as-library -o &quot;$(_MasjidWidgetReloadBridgeLib)&quot; @(_MasjidWidgetBridgeSource->'&quot;%(FullPath)&quot;', ' ')" />
 	</Target>
 
 	<!-- iOS simulator / local development: use ad-hoc signing so _DetectSigningIdentity

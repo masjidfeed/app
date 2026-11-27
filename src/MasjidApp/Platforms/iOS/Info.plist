@@ -21,6 +21,8 @@
 	</dict>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<!-- iPhone only (UIDeviceFamily 1). iPadOS 26 deprecated UIRequiresFullScreen, so an
 	     iPad-capable app must support all four orientations and be resizable (ITMS-90474).
 	     This app is portrait-only by design, so iPad is out of scope. -->
