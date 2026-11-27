@@ -19,17 +19,17 @@ on:
         description: "Google Play release track."
         required: true
         type: choice
-        default: internal
+        default: production
         options:
           - internal
           - alpha
           - beta
           - production
       release_status:
-        description: "Draft requires completion in Play Console; completed starts rollout."
+        description: "Draft requires action in Play Console. Completed submits the release for rollout, including any required review."
         required: true
         type: choice
-        default: draft
+        default: completed
         options:
           - draft
           - completed

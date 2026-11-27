@@ -12,8 +12,8 @@
 #   ANDROID_SIGNING_PASSWORD_FILE File containing the keystore/key password.
 #   GOOGLE_PLAY_JSON_KEY          Google Play service-account JSON path. When omitted,
 #                                 the script builds and verifies but does not upload.
-#   GOOGLE_PLAY_TRACK             internal, alpha, beta, or production (default: internal).
-#   GOOGLE_PLAY_RELEASE_STATUS    draft or completed (default: draft).
+#   GOOGLE_PLAY_TRACK             internal, alpha, beta, or production (default: production).
+#   GOOGLE_PLAY_RELEASE_STATUS    draft or completed (default: completed).
 #   GOOGLE_MAPS_API_KEY           Required production-restricted Android Maps key.
 #   BUILD_NUMBER                  New ApplicationVersion. Defaults to current + 1.
 #   APP_VERSION                   New ApplicationDisplayVersion (marketing version, e.g.
@@ -37,8 +37,8 @@ ANDROID_KEYSTORE="${ANDROID_KEYSTORE:-$HOME/.config/masjidapp/masjidapp-upload.k
 ANDROID_KEY_ALIAS="${ANDROID_KEY_ALIAS:-masjidapp-upload}"
 ANDROID_SIGNING_PASSWORD_FILE="${ANDROID_SIGNING_PASSWORD_FILE:-$HOME/.config/masjidapp/android-signing-password}"
 GOOGLE_PLAY_JSON_KEY="${GOOGLE_PLAY_JSON_KEY:-$HOME/.config/masjidapp/google-play-service-account.json}"
-GOOGLE_PLAY_TRACK="${GOOGLE_PLAY_TRACK:-internal}"
-GOOGLE_PLAY_RELEASE_STATUS="${GOOGLE_PLAY_RELEASE_STATUS:-draft}"
+GOOGLE_PLAY_TRACK="${GOOGLE_PLAY_TRACK:-production}"
+GOOGLE_PLAY_RELEASE_STATUS="${GOOGLE_PLAY_RELEASE_STATUS:-completed}"
 PUBLISHING_KEY_VAULT_NAME="${PUBLISHING_KEY_VAULT_NAME:-masjidfeed-publish}"
 KEY_VAULT_TEMP=""
 PLAY_API="https://androidpublisher.googleapis.com"
