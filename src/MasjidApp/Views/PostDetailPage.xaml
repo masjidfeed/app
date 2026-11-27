@@ -24,14 +24,13 @@
             IsVisible="{Binding Post, Converter={StaticResource IsNotNullConverter}}">
 
             <Image
+                x:Name="PostImage"
                 Source="{Binding Post.ImageUrl}"
                 Aspect="AspectFit"
                 IsVisible="{Binding Post.ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}"
                 SemanticProperties.Description="Post image">
                 <Image.GestureRecognizers>
-                    <TapGestureRecognizer
-                        Command="{Binding PreviewImageCommand}"
-                        CommandParameter="{Binding Post.ImageUrl}" />
+                    <TapGestureRecognizer Tapped="OnPostImageTapped" />
                 </Image.GestureRecognizers>
             </Image>
 

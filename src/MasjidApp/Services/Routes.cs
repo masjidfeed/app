@@ -53,9 +53,6 @@ public static class Routes
     /// <summary>Legacy announcement detail route retained for navigation compatibility.</summary>
     public const string AnnouncementDetail = "announcement-detail";
 
-    /// <summary>Full-screen image preview for announcement and event images.</summary>
-    public const string ImagePreview = "image-preview";
-
     /// <summary>Contact &amp; masjid info screen (FR-CM-02, FR-CM-04) - Batch B4.</summary>
     public const string Contact = "contact";
 

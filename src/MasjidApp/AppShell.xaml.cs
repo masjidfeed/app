@@ -159,7 +159,6 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.PostDetail, typeof(PostDetailPage));
         Routing.RegisterRoute(Routes.EventDetail, typeof(PostDetailPage));
         Routing.RegisterRoute(Routes.AnnouncementDetail, typeof(PostDetailPage));
-        Routing.RegisterRoute(Routes.ImagePreview, typeof(ImagePreviewPage));
         Routing.RegisterRoute(Routes.Contact, typeof(ContactPage));
         Routing.RegisterRoute(Routes.Parking, typeof(ParkingPage));
     }

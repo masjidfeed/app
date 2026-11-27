@@ -273,7 +273,6 @@ public static class MauiProgram
         // ── Unified post detail, notifications, and image preview ────────────────
         services.AddTransient<PostDetailViewModel>();
         services.AddTransient<NotificationsViewModel>();
-        services.AddTransient<ImagePreviewViewModel>();
 
         // ── Batches B4 / B5 / B6 / B8: Contact, Qibla, Donations, About ────────
         // ILocationService - coarse-only on Android (bypasses MAUI's fine-location check);
@@ -320,7 +319,6 @@ public static class MauiProgram
         services.AddTransient<PrivacyPolicyPage>();
         services.AddTransient<PostDetailPage>();
         services.AddTransient<NotificationsPage>();
-        services.AddTransient<ImagePreviewPage>();
         services.AddTransient<ContactPage>();
         services.AddTransient<QiblaPage>();
         services.AddTransient<DonationsPage>();

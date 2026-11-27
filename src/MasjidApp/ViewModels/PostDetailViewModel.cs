@@ -107,19 +107,6 @@ public sealed partial class PostDetailViewModel : ViewModelBase, IQueryAttributa
     private Task ShareAsync() => _postActions.ShareAsync(Post?.Title, Post?.Url);
 
     [RelayCommand]
-    private Task PreviewImageAsync(string? imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            return Task.CompletedTask;
-        }
-
-        return _navigation.GoToAsync(
-            Routes.ImagePreview,
-            new Dictionary<string, object> { { "ImageUrl", imageUrl } });
-    }
-
-    [RelayCommand]
     private async Task AddToCalendarAsync(CancellationToken ct)
     {
         var occurrence = Occurrence ?? CreateOccurrence(Post);
