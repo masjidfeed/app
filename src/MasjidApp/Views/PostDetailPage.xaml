@@ -58,27 +58,12 @@
                     IsVisible="{Binding Post.RecurrenceRule, Converter={StaticResource IsNotNullOrEmptyConverter}}"
                     SemanticProperties.Description="This is a recurring event" />
 
-                <Border
+                <controls:EventAlertBanner
                     Padding="14,12"
-                    Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
-                    StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
-                    Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}"
-                    IsVisible="{Binding HasActiveAlert}">
-                    <VerticalStackLayout Spacing="4">
-                        <Label
-                            Text="{l:Localize Events_Alert_Label}"
-                            Style="{StaticResource TextCaptionStrong}"
-                            TextTransform="Uppercase"
-                            TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}"
-                            SemanticProperties.HeadingLevel="Level2" />
-                        <Label
-                            Text="{Binding ActiveAlert}"
-                            Style="{StaticResource TextBody}"
-                            LineBreakMode="WordWrap"
-                            TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
-                    </VerticalStackLayout>
-                </Border>
+                    IsVisible="{Binding HasActiveAlert}"
+                    Text="{Binding ActiveAlert}"
+                    TextStyle="{StaticResource TextBody}" />
 
                 <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasEventDateTime}">
                     <Label

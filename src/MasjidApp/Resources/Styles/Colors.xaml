@@ -49,6 +49,13 @@
     <Color x:Key="EventAlertText">#5C3B00</Color>
     <Color x:Key="EventAlertTextDark">#FFF4CC</Color>
 
+    <Color x:Key="EventCancellationBackground">#FDE9E7</Color>
+    <Color x:Key="EventCancellationBackgroundDark">#4A1C1B</Color>
+    <Color x:Key="EventCancellationBorder">#C73732</Color>
+    <Color x:Key="EventCancellationBorderDark">#FF8980</Color>
+    <Color x:Key="EventCancellationText">#752020</Color>
+    <Color x:Key="EventCancellationTextDark">#FFDFDC</Color>
+
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>

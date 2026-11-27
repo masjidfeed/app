@@ -147,9 +147,6 @@
   <data name="Events_Recurring_Label" xml:space="preserve">
     <value>Recurring</value>
   </data>
-  <data name="Events_Alert_Label" xml:space="preserve">
-    <value>Event update</value>
-  </data>
 
   <!-- ── Prayer Times (Batch A4) ───────────────────────────────────────────── -->
   <data name="PrayerTimes_Title" xml:space="preserve">

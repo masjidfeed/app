@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Border
+    x:Class="MasjidApp.Controls.EventAlertBanner"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    StrokeThickness="1"
+    Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
+    Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}">
+
+    <Border.Resources>
+        <Style x:Key="EventAlertIcon" TargetType="Path">
+            <Setter Property="WidthRequest" Value="18" />
+            <Setter Property="HeightRequest" Value="18" />
+            <Setter Property="HorizontalOptions" Value="Center" />
+            <Setter Property="VerticalOptions" Value="Start" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+            <Setter Property="Aspect" Value="Uniform" />
+            <Setter Property="StrokeThickness" Value="1.7" />
+            <Setter Property="StrokeLineCap" Value="Round" />
+            <Setter Property="StrokeLineJoin" Value="Round" />
+            <Setter Property="AutomationProperties.IsInAccessibleTree" Value="False" />
+        </Style>
+    </Border.Resources>
+
+    <VisualStateManager.VisualStateGroups>
+        <VisualStateGroup Name="AlertType">
+            <VisualState Name="Normal" />
+            <VisualState Name="Cancellation">
+                <VisualState.Setters>
+                    <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource EventCancellationBorder}, Dark={StaticResource EventCancellationBorderDark}}" />
+                    <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource EventCancellationBackground}, Dark={StaticResource EventCancellationBackgroundDark}}" />
+                    <Setter TargetName="AlertMessage" Property="Label.TextColor" Value="{AppThemeBinding Light={StaticResource EventCancellationText}, Dark={StaticResource EventCancellationTextDark}}" />
+                    <Setter TargetName="WarningIcon" Property="VisualElement.IsVisible" Value="False" />
+                    <Setter TargetName="CancellationIcon" Property="VisualElement.IsVisible" Value="True" />
+                </VisualState.Setters>
+            </VisualState>
+        </VisualStateGroup>
+    </VisualStateManager.VisualStateGroups>
+
+    <Grid ColumnDefinitions="18,*" ColumnSpacing="8">
+        <Path
+            x:Name="WarningIcon"
+            Data="M 12,3 L 22,21 H 2 Z M 12,9 V 13 M 12,17 V 17.1"
+            Style="{StaticResource EventAlertIcon}"
+            Stroke="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+        <Path
+            x:Name="CancellationIcon"
+            Data="M 12,2 A 10,10 0 1 1 12,22 A 10,10 0 1 1 12,2 Z M 8.5,8.5 L 15.5,15.5 M 15.5,8.5 L 8.5,15.5"
+            Style="{StaticResource EventAlertIcon}"
+            IsVisible="False"
+            Stroke="{AppThemeBinding Light={StaticResource EventCancellationText}, Dark={StaticResource EventCancellationTextDark}}" />
+        <Label
+            x:Name="AlertMessage"
+            Grid.Column="1"
+            LineBreakMode="WordWrap"
+            TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
+    </Grid>
+</Border>

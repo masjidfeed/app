@@ -149,33 +149,19 @@
                                             CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
                                     <VerticalStackLayout Padding="16,14" Spacing="4">
-                                        <Border
-                                            Margin="0,0,0,4"
-                                            Padding="12,10"
-                                            Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
-                                            StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 6"
-                                            Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}"
-                                            IsVisible="{Binding HasActiveAlert}">
-                                            <VerticalStackLayout Spacing="2">
-                                                <Label
-                                                    Text="{l:Localize Events_Alert_Label}"
-                                                    Style="{StaticResource TextMicroStrong}"
-                                                    TextTransform="Uppercase"
-                                                    TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
-                                                <Label
-                                                    Text="{Binding ActiveAlert}"
-                                                    Style="{StaticResource TextCaptionStrong}"
-                                                    LineBreakMode="WordWrap"
-                                                    TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
-                                            </VerticalStackLayout>
-                                        </Border>
                                         <Label
                                             Text="{Binding Post.Title}"
                                             FontFamily="GildaDisplay"
                                             Style="{StaticResource TextCardTitle}"
                                             SemanticProperties.HeadingLevel="Level3"
                                             SemanticProperties.Description="{Binding Post.Title}" />
+                                        <controls:EventAlertBanner
+                                            Margin="0,0,0,4"
+                                            Padding="12,10"
+                                            StrokeShape="RoundRectangle 6"
+                                            IsVisible="{Binding HasActiveAlert}"
+                                            Text="{Binding ActiveAlert}"
+                                            TextStyle="{StaticResource TextCaptionStrong}" />
                                         <Label
                                             Text="{Binding DateText}"
                                             Style="{StaticResource TextCaption}"
@@ -312,26 +298,12 @@
                                                 MaxLines="2"
                                                 SemanticProperties.HeadingLevel="Level3"
                                                 SemanticProperties.Description="{Binding Event.Title}" />
-                                            <Border
+                                            <controls:EventAlertBanner
                                                 Padding="10,8"
-                                                Stroke="{AppThemeBinding Light={StaticResource EventAlertBorder}, Dark={StaticResource EventAlertBorderDark}}"
-                                                StrokeThickness="1"
                                                 StrokeShape="RoundRectangle 6"
-                                                Background="{AppThemeBinding Light={StaticResource EventAlertBackground}, Dark={StaticResource EventAlertBackgroundDark}}"
-                                                IsVisible="{Binding HasActiveAlert}">
-                                                <VerticalStackLayout Spacing="2">
-                                                    <Label
-                                                        Text="{l:Localize Events_Alert_Label}"
-                                                        Style="{StaticResource TextMicroStrong}"
-                                                        TextTransform="Uppercase"
-                                                        TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
-                                                    <Label
-                                                        Text="{Binding ActiveAlert}"
-                                                        Style="{StaticResource TextCaption}"
-                                                        LineBreakMode="WordWrap"
-                                                        TextColor="{AppThemeBinding Light={StaticResource EventAlertText}, Dark={StaticResource EventAlertTextDark}}" />
-                                                </VerticalStackLayout>
-                                            </Border>
+                                                IsVisible="{Binding HasActiveAlert}"
+                                                Text="{Binding ActiveAlert}"
+                                                TextStyle="{StaticResource TextCaption}" />
                                             <HorizontalStackLayout Spacing="6">
                                                 <Label
                                                     Text="🕒"
