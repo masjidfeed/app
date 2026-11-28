@@ -324,16 +324,21 @@ upload_to_google_play() {
     echo "  OK   ProGuard mapping attached to versionCode $NEW_BUILD"
   fi
 
-  # Add the build to the configured track without dropping its other releases.
-  current_releases=$(curl -fsS --max-time 60 \
-    -H "Authorization: Bearer $ACCESS_TOKEN" \
-    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/$GOOGLE_PLAY_TRACK" |
-    jq -c '.releases // []')
-  new_releases=$(printf '%s' "$current_releases" | jq -c --arg vc "$NEW_BUILD" --arg st "$GOOGLE_PLAY_RELEASE_STATUS" '
-    if any(.[]; .status == $st)
-    then map(if .status == $st then .versionCodes = ((.versionCodes // []) + [$vc] | unique) else . end)
-    else . + [{"status": $st, "versionCodes": [$vc]}]
-    end')
+  if [ "$GOOGLE_PLAY_RELEASE_STATUS" = completed ]; then
+    # The new bundle supersedes older builds on this track in a full rollout.
+    new_releases=$(jq -cn --arg vc "$NEW_BUILD" '[{status: "completed", versionCodes: [$vc]}]')
+  else
+    # Keep existing track releases when adding a build to a draft.
+    current_releases=$(curl -fsS --max-time 60 \
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/$GOOGLE_PLAY_TRACK" |
+      jq -c '.releases // []')
+    new_releases=$(printf '%s' "$current_releases" | jq -c --arg vc "$NEW_BUILD" '
+      if any(.[]; .status == "draft")
+      then map(if .status == "draft" then .versionCodes = ((.versionCodes // []) + [$vc] | unique) else . end)
+      else . + [{status: "draft", versionCodes: [$vc]}]
+      end')
+  fi
   curl -fsS --max-time 60 -X PUT \
     -H "Authorization: Bearer $ACCESS_TOKEN" \
     -H 'Content-Type: application/json' \
