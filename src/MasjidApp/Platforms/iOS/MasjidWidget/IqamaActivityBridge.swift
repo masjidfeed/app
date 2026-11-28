@@ -1,10 +1,11 @@
 import ActivityKit
 import Foundation
 
-typealias TokenCallback = @convention(c) (UnsafePointer<CChar>, Int64) -> Void
+public typealias TokenCallback = @convention(c) (UnsafePointer<CChar>, Int64) -> Void
 
+// DllImport resolves this symbol in the app binary, so it must be public.
 @_cdecl("MasjidAppSyncIqamaActivities")
-func syncIqamaActivities(_ json: UnsafePointer<CChar>, _ revision: Int64, _ onToken: TokenCallback?) {
+public func syncIqamaActivities(_ json: UnsafePointer<CChar>, _ revision: Int64, _ onToken: TokenCallback?) {
     guard #available(iOS 26.0, *),
           let data = String(cString: json).data(using: .utf8),
           let slots = try? JSONDecoder().decode([IqamaSlot].self, from: data)

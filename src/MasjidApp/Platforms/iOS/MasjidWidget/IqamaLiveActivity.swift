@@ -7,10 +7,7 @@ struct IqamaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: IqamaActivityAttributes.self) { context in
             HStack {
-                VStack(alignment: .leading) {
-                    Text(context.attributes.prayer).font(.headline)
-                    Text("Iqama").font(.subheadline).foregroundStyle(.secondary)
-                }
+                prayerLabel(context).font(.headline)
                 Spacer()
                 status(context)
             }
@@ -18,29 +15,38 @@ struct IqamaLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text(context.attributes.prayer).font(.headline)
+                    prayerLabel(context).font(.headline)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    status(context)
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    Text("Iqama").font(.subheadline).foregroundStyle(.secondary)
+                    status(context, ringSize: 42)
                 }
             } compactLeading: {
-                Text(context.attributes.prayer)
+                prayerLabel(context)
+                    .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
+                    .allowsTightening(true)
+                    .minimumScaleFactor(0.65)
             } compactTrailing: {
-                status(context)
+                status(context, ringSize: 32)
             } minimal: {
                 if hasStarted(context) {
                     Image(systemName: "checkmark").accessibilityLabel("Iqama started")
                 } else if Date.now >= context.attributes.endDate {
                     Image(systemName: "clock").accessibilityLabel("Iqama time passed")
                 } else {
-                    countdown(context, width: 36)
+                    countdownRing(context, size: 24)
+                        .accessibilityLabel("\(context.attributes.prayer) iqama")
+                        .accessibilityValue(countdown(context))
                 }
             }
         }
+    }
+
+    private func prayerLabel(_ context: ActivityViewContext<IqamaActivityAttributes>) -> Text {
+        if hasStarted(context) {
+            return Text(context.attributes.prayer)
+        }
+        return Text("\(context.attributes.prayer) iqama")
     }
 
     private func hasStarted(_ context: ActivityViewContext<IqamaActivityAttributes>) -> Bool {
@@ -48,23 +54,41 @@ struct IqamaLiveActivity: Widget {
     }
 
     @ViewBuilder
-    private func status(_ context: ActivityViewContext<IqamaActivityAttributes>) -> some View {
+    private func status(_ context: ActivityViewContext<IqamaActivityAttributes>, ringSize: CGFloat? = nil) -> some View {
         if hasStarted(context) {
             Text("started")
         } else if Date.now >= context.attributes.endDate {
             Text("Time passed")
+        } else if let ringSize {
+            ZStack {
+                countdownRing(context, size: ringSize)
+                    .accessibilityHidden(true)
+                countdown(context)
+                    .font(.system(size: ringSize * 0.28, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(width: ringSize - 7)
+            }
         } else {
-            countdown(context, width: 48)
+            countdown(context)
+                .multilineTextAlignment(.trailing)
         }
     }
 
-    private func countdown(_ context: ActivityViewContext<IqamaActivityAttributes>, width: CGFloat) -> some View {
+    private func countdown(_ context: ActivityViewContext<IqamaActivityAttributes>) -> Text {
         Text(timerInterval: context.attributes.countdownDate...context.attributes.iqamaDate,
              countsDown: true, showsHours: false)
             .monospacedDigit()
-            .multilineTextAlignment(.trailing)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .frame(width: width, alignment: .trailing)
+    }
+
+    private func countdownRing(_ context: ActivityViewContext<IqamaActivityAttributes>, size: CGFloat) -> some View {
+        ProgressView(timerInterval: context.attributes.countdownDate...context.attributes.iqamaDate, countsDown: true) {
+            EmptyView()
+        } currentValueLabel: {
+            EmptyView()
+        }
+        .progressViewStyle(.circular)
+        .frame(width: size, height: size)
     }
 }
