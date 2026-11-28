@@ -291,6 +291,7 @@ mint_google_play_access_token() {
 # Android toolchain in Release, so there is nothing valid to upload for nativeCode.
 upload_to_google_play() {
   local bundles_response bundle_version current_releases new_releases
+  local commit_response commit_error
 
   ACCESS_TOKEN=$(mint_google_play_access_token)
   EDIT_ID=$(curl -fsS --max-time 60 -X POST \
@@ -340,10 +341,15 @@ upload_to_google_play() {
     "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/$GOOGLE_PLAY_TRACK" >/dev/null ||
     fail "Could not add versionCode $NEW_BUILD to the $GOOGLE_PLAY_TRACK track."
 
-  curl -fsS --max-time 300 -X POST \
+  if ! commit_response=$(curl --fail-with-body -sS --max-time 300 -X POST \
     -H "Authorization: Bearer $ACCESS_TOKEN" \
-    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID:commit" >/dev/null ||
-    fail "Could not commit the Google Play edit."
+    "$PLAY_API/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID:commit"); then
+    commit_error=$(jq -r '.error.message // empty' <<< "$commit_response" 2>/dev/null) || commit_error=""
+    if [ -n "$commit_error" ]; then
+      printf 'Google Play: %s\n' "$commit_error" >&2
+    fi
+    fail "Could not commit the Google Play edit for the '$GOOGLE_PLAY_TRACK' track."
+  fi
   EDIT_ID=""
   echo "Uploaded build $NEW_BUILD to Google Play track '$GOOGLE_PLAY_TRACK' ($GOOGLE_PLAY_RELEASE_STATUS)."
 }
